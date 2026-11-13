@@ -1,0 +1,1264 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>HyGrow Grow Sim</title><meta name="theme-color" content="#080808"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Grow Sim"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- hosting: set content to the public page URL (e.g. the Wix page) so share cards link there instead of the iframe's own address; empty = use this page's address -->
+<meta name="hygrow:share-url" content="https://claude.ai/artifact/KiR1k2n4pKr9pYrhktujSm"><meta name="hygrow:flags" content="shop">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800;900&display=swap">
+<style>
+/* Layout: tent stage left, Axel + readings right, tool dock below. Single dark look in HyGrow's black/green/orange. */
+:root{color-scheme:dark;--display:"Fredoka","Nunito",system-ui,sans-serif;--body:"Nunito","Segoe UI",system-ui,sans-serif;--ink:#080808;--panel:#121512;--panel2:#1a1f1a;--line:#2a312a;--text:#f0f4f0;--muted:#a9b3a9;--green:#6ec846;--orange:#ec8024;--red:#e2453a;--yellow:#f2b950;--brown:#2a1d14;--lock-op:.85}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body)}
+body{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand,.card h2,.rd b,.stat b,#bubble,.scores b,.big{font-family:var(--display)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Fx (fx.js): reward and feedback moments */
+@keyframes fxPop{0%{transform:scale(1)}45%{transform:scale(1.12);box-shadow:0 4px 14px #0007}100%{transform:scale(1)}}
+.fx-pop{animation:fxPop .42s cubic-bezier(.3,1.5,.5,1);box-shadow:0 3px 12px #0006}
+.fx-star{font-style:normal;display:inline-block;transition:opacity .15s}
+@keyframes fxFlash{0%{box-shadow:0 0 0 3px var(--fx)}100%{box-shadow:0 0 0 0 transparent}}
+.fx-flash-good{--fx:#6ec846;border-color:#6ec846!important;box-shadow:0 0 0 3px #6ec84699;animation:fxFlash .65s ease-out}
+.fx-flash-warn{--fx:#ec8024;border-color:#ec8024!important;box-shadow:0 0 0 3px #ec802499;animation:fxFlash .65s ease-out}
+.fx-flash-bad{--fx:#e2362b;border-color:#e2362b!important;box-shadow:0 0 0 3px #e2362b99;animation:fxFlash .65s ease-out}
+.fx-confetti{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:60}
+.fx-glow{position:fixed;inset:0;pointer-events:none;z-index:60;box-shadow:inset 0 0 80px 10px #ffe27a99}
+.fx-stage{position:fixed;left:50%;z-index:55;display:flex;align-items:center;gap:10px;max-width:min(92vw,420px);padding:8px 16px;background:var(--panel);border:2px solid var(--green);border-radius:999px;box-shadow:0 6px 18px #0008;pointer-events:none;opacity:0;transform:translate(-50%,-140%);transition:transform .35s cubic-bezier(.2,1.2,.4,1),opacity .25s}
+.fx-stage.in{opacity:1;transform:translate(-50%,0)}
+.fx-stage.out{opacity:0;transform:translate(-50%,-140%)}
+.fx-stage .fx-si{font-size:22px}.fx-stage b{display:block;font-family:var(--display);font-size:15px}.fx-stage small{display:block;font-size:11px;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px}
+@media (prefers-reduced-motion:reduce){.fx-stage{transition:none}.fx-stage.in{opacity:1;transform:translate(-50%,0)}}
+#dock button{position:relative;overflow:hidden}
+#dock button::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;opacity:0;pointer-events:none}
+#dock button:active:not(:disabled){transform:scale(.96)}
+#dock button:active:not(:disabled)::after{animation:fxRipple .12s ease-out}
+@keyframes fxRipple{from{opacity:.35;transform:scale(1)}to{opacity:0;transform:scale(9)}}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--green)}
+#app{max-width:1100px;margin:0 auto;padding-block:12px 24px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;background:var(--panel);border:2px solid var(--line);border-radius:16px}
+.brand{font-weight:900;letter-spacing:.5px;font-size:18px}.brand span{color:var(--green)}
+.stat{display:flex;flex-direction:column;font-size:12px;color:var(--muted);min-width:90px}.stat b{color:var(--text);font-size:15px}
+.bar{height:9px;background:#0b0e0b;border:1.5px solid var(--line);border-radius:6px;overflow:hidden;width:120px;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--green);transition:width .4s}
+#health.warn{background:var(--yellow)}#health.bad{background:var(--red)}
+#health{transition:width .6s,background-color .6s} /* ui.js sets an inline background-color from Fx.healthColor; the classes above are the fallback */
+#stagebar{background:var(--orange)}
+#speed{display:flex;gap:4px;margin-left:auto;align-items:center}#speedbtns{display:flex;gap:4px}
+#speed button,#mute{background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 10px;font-weight:800}
+#speed button.on{background:var(--green);color:var(--ink);border-color:var(--green)}
+main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;margin-top:14px}
+#tent{position:relative;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:8px}
+#tent svg{width:100%;height:auto;display:block;position:relative;z-index:1}
+.tentbg{position:absolute;inset:0;z-index:0;border-radius:16px;overflow:hidden;pointer-events:none}
+.side{display:flex;flex-direction:column;gap:14px}
+#quinn{display:flex;align-items:flex-end;gap:8px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:10px 12px 6px;min-height:170px}
+.quinn-svg{width:120px;height:156px;flex:none}
+#bubble{position:relative;flex:1;background:#f6f3ea;color:var(--brown);border:3px solid var(--brown);border-radius:16px;padding:12px 14px;font-size:15px;line-height:1.35;font-weight:600;margin-bottom:58px;min-height:60px;opacity:0;transform:translateY(6px) scale(.98);transition:all .2s}
+#bubble.show{opacity:1;transform:none}
+#bubble:after{content:"";position:absolute;left:-14px;bottom:16px;border:8px solid transparent;border-right:12px solid var(--brown)}
+#bubble a.store{display:inline-block;margin-top:8px;background:var(--orange);color:var(--ink);font-weight:900;padding:5px 10px;border-radius:999px;text-decoration:none;border:2px solid var(--brown)}
+#readings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rd{background:var(--panel);border:2px solid var(--line);border-left:6px solid var(--green);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.rd span{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.rd b{font-size:18px}.rd b em{font-style:normal;font-size:11px;color:var(--muted);margin-left:2px}
+.rd small{font-size:10.5px;color:var(--muted)}
+.rd.warn{border-left-color:var(--yellow)}.rd.bad{border-left-color:var(--red);animation:pulse 1s infinite}.rd.unknown{border-left-color:#555;opacity:.75}
+@keyframes pulse{50%{background:#2a1513}}
+/* EC / pH arc gauge under the value (ui.js gaugeHTML; needle eased by animateGauges) */
+.rdg{display:block;width:64px;height:35px;margin-top:2px;align-self:center;overflow:visible}
+.rdg .gt,.rdg .gb{fill:none;stroke-width:7}
+.rdg .gt{stroke:#38423a}.rdg .gb{stroke:var(--green);opacity:.9}
+.rdg .gn line{stroke:var(--text);stroke-width:2.6;stroke-linecap:round}.rdg .gh{fill:var(--text)}
+.rd.warn .rdg .gn line{stroke:var(--yellow)}.rd.bad .rdg .gn line{stroke:var(--red)}
+html body #almanac .ae.lock{opacity:var(--lock-op)} /* v36c: a locked Almanac entry dimmed to .55 read 3.3:1; at .85 its muted text is over 4.5:1 (almanac.js is not ours, so the override is here) */
+/* sky strip behind the day stat: ui.js sets --hour (0..24) and one of .sky-night/.sky-dawn/.sky-day/.sky-dusk */
+.s-day{position:relative;isolation:isolate;border-radius:10px;padding:11px 10px 4px;background-color:var(--sky,#16224d);transition:background-color 1.5s}
+.s-day:before{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(8,10,8,.45);z-index:-1;pointer-events:none}
+.s-day:after{content:"";position:absolute;top:2px;left:calc(var(--hour,12) / 24 * 100% - 5px);width:10px;height:10px;border-radius:50%;background:var(--dot,#ffd45e);box-shadow:0 0 8px 2px var(--dotg,#ffd45e88);transition:left 1s linear,background-color 1.5s;pointer-events:none}
+.s-day.sky-snap:after{transition:none}
+.s-day.sky-night{--sky:#16224d;--dot:#dfe6ff;--dotg:#9fb4ff66}
+.s-day.sky-dawn{--sky:#7a3f2a;--dot:#ffb36b;--dotg:#ffb36b88}
+.s-day.sky-day{--sky:#2d6a8c;--dot:#ffd45e;--dotg:#ffd45e88}
+.s-day.sky-dusk{--sky:#6a3560;--dot:#ff9a5a;--dotg:#ff9a5a88}
+/* weather chip (ui.js setWx): fades 300 ms */
+#wx{display:inline-flex;align-items:center;gap:6px;padding:3px 11px 3px 8px;border:2px solid var(--line);border-radius:999px;background:var(--panel2);font-size:12.5px;font-weight:800;opacity:0;transition:opacity .3s}
+#wx.on{opacity:1}
+#wx.heat{color:#ffb07a;border-color:#ec802499}#wx.cold{color:#bfe6ff;border-color:#6fc3e899}
+#wx .wxw{animation:wxwave 1.2s ease-in-out infinite alternate}#wx .wxw:nth-child(2){animation-delay:.2s}#wx .wxw:nth-child(3){animation-delay:.4s}
+@keyframes wxwave{from{transform:translateY(-1.3px)}to{transform:translateY(1.3px)}}
+#dock{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.grp{display:flex;flex-direction:column;gap:6px;flex:1 1 auto}.grp h4{margin:0;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}.btns button{flex:1 1 72px;min-width:72px}
+#dock button{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:800;transition:transform .08s,background .15s}
+@media (hover:hover){#dock button:hover{background:var(--panel2);transform:translateY(-2px)}}
+#dock button:active{transform:translateY(1px) scale(.97)}
+#dock button.ready{border-color:var(--orange);box-shadow:0 0 0 3px #ec802455;animation:bob 1s infinite}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.modal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
+.modal.show{display:flex}
+.card{background:var(--panel);border:3px solid var(--line);border-radius:20px;max-width:860px;width:100%;max-height:92vh;overflow:auto;padding:18px 20px}
+.card h2{margin:0 0 4px;font-size:24px}.card h3{margin:16px 0 8px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}.card h3 small{text-transform:none;letter-spacing:0;font-weight:500}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.gear{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:3px;min-width:150px;flex:1;position:relative}
+.gear b{font-size:14px}.gear span{font-size:12.5px;color:var(--muted)}.gear i{font-style:normal;font-size:11px;font-weight:800;color:var(--ink);background:var(--yellow);border-radius:999px;padding:1px 7px;align-self:flex-start}
+.gear.sel{border-color:var(--green);background:#16261a;box-shadow:0 0 0 3px #6ec84633}
+.gear .mini{font-size:11px;align-self:flex-start}
+.foot{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:16px;flex-wrap:wrap}
+#budget b{color:var(--green);font-size:18px}#budget b.neg{color:var(--red)}
+.big{background:var(--green);color:var(--ink);border:3px solid var(--brown);border-radius:999px;padding:12px 22px;font-weight:900;font-size:16px}
+.big:disabled{opacity:.4}
+.tentline{font-size:12.5px;color:var(--muted)}
+.stepind{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.budgetbox{margin:10px 0}.bigmoney{font-size:34px;font-weight:800;color:var(--green)}
+#budgetRange{width:100%;accent-color:var(--green);height:32px;margin:4px 0}.rangeends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.axelline{background:var(--panel2);border:2px solid var(--orange);border-radius:12px;padding:8px 12px;font-size:14px}
+.presets .gear{min-width:120px}#go:disabled{opacity:.45;filter:grayscale(1);cursor:not-allowed}
+.stars{font-size:44px;color:var(--yellow);text-align:center}.stars span{color:#333}
+.scores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.scores div{background:var(--panel2);border-radius:12px;padding:10px;text-align:center}.scores b{display:block;font-size:20px}.scores span{font-size:12px;color:var(--muted)}.scores small.plain{display:block;margin-top:4px}.lost-axel{text-align:center;margin:0 0 10px}.lost-axel img{width:112px;height:auto;filter:saturate(.85)}.lost-end .big{width:100%;margin-top:4px} /* v49 (critic #8) */
+.cta{display:inline-block;background:var(--orange);color:var(--ink);font-weight:900;padding:10px 16px;border-radius:999px;text-decoration:none;border:3px solid var(--brown)}
+.tip{color:var(--muted)}
+.opts{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.menu,.ghost{background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 12px;font-weight:800}
+.titlecard{display:flex;flex-wrap:wrap;gap:18px;align-items:center;max-width:760px}#title-bg{position:relative;flex:none;width:100%;height:clamp(110px,24vw,190px);border-radius:12px;overflow:hidden;background:#080808}#campBg{position:relative;width:100%;height:clamp(120px,30vw,220px);border-radius:12px;overflow:hidden;background:#080808}.mates{margin:0 0 12px}.mates b{display:block;margin-bottom:4px}.mates small{color:var(--muted)}#campSide h3{margin:14px 0 8px}#campSide{display:grid;gap:10px}
+#titleAxel{width:200px;height:260px;flex:none}
+.tbody .ttl{font-family:var(--display);font-size:52px;line-height:1;margin:4px 0 8px;color:var(--green)}
+.kicker{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--orange);font-weight:900}
+.tbody p{color:var(--muted);margin:0 0 14px;max-width:46ch}
+.modes{display:flex;flex-direction:column;gap:8px}
+.mode{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mode:hover,.mode:focus-visible{border-color:var(--green)}
+.mode b{font-family:var(--display);font-size:18px}.mode span{color:var(--muted);font-size:13px}
+button:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:6px 0 12px}
+.badge{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;background:var(--panel2);border-radius:12px;padding:10px 6px;min-width:0}
+.badge b{font-family:var(--display);font-size:14px}.badge span{font-size:11.5px;color:var(--muted);line-height:1.25}
+.badge.off b{color:var(--muted)}
+.badge.on svg{animation:badgePop .5s both}.badge:nth-child(2) svg{animation-delay:.08s}.badge:nth-child(3) svg{animation-delay:.16s}.badge:nth-child(4) svg{animation-delay:.24s}.badge:nth-child(5) svg{animation-delay:.32s}.badge:nth-child(6) svg{animation-delay:.4s}
+@keyframes badgePop{0%{transform:scale(.3) rotate(-20deg);opacity:0}70%{transform:scale(1.12) rotate(4deg)}100%{transform:none;opacity:1}}
+.cart-cta{background:var(--green)!important}
+.camp-end{background:var(--panel2);border:2px solid var(--green);border-radius:12px;padding:8px 14px;margin:10px 0}.camp-end.fail{border-color:var(--orange)}.camp-end h3{margin:4px 0}.camp-end .reward{color:var(--yellow);font-size:16px}
+.ctas{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.cta.share{background:var(--green);display:inline-flex;flex-direction:column;line-height:1.15}.cta.share small{font-size:11.5px;font-weight:700}
+
+/* crop picker, live link, journal */
+.cropgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.cropgrid .gear{min-width:0;align-items:flex-start;gap:2px;padding-top:8px}
+.cropgrid .gear .cic{display:block;height:44px;margin-bottom:2px}.cropgrid .gear .cic svg{height:46px;width:40px}
+.cropgrid .gear .meta{font-size:12px;color:var(--text);font-weight:700}.diff{color:var(--yellow);letter-spacing:1px}.diff s{text-decoration:none;color:#444}
+.cropgrid .gear>span:last-of-type{font-size:12px;line-height:1.3}
+.cropgrid .gear>i{margin-top:4px;background:var(--orange)}
+#livechip{display:inline-flex}
+#offline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:8px 14px;background:#2b2210;border:2px solid var(--yellow);border-radius:12px;color:var(--yellow);font-weight:800;font-size:13.5px}
+#offline button{margin-left:auto}
+.rd{position:relative}.livetag{position:absolute;top:7px;right:8px;text-decoration:none;font-size:9px;font-weight:900;letter-spacing:.6px;background:var(--green);color:var(--ink);border-radius:999px;padding:1px 6px}
+#dock button:disabled{opacity:.4;cursor:not-allowed;transform:none;background:var(--panel)}
+#dock button span{text-align:center}
+.jrow{background:var(--panel2);border-radius:12px;padding:8px 12px;margin:8px 0}
+.jhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.jhead b{font-family:var(--display)}.jhead span{font-weight:800}.jhead small{color:var(--muted);font-weight:500;margin-left:6px}
+.spark{width:100%;height:46px;display:block;margin-top:4px}
+
+/* Axel speech: one idea per bubble, paused clock indicator, spotlight */
+#quinn{position:relative}
+#pausedtag{position:absolute;top:8px;right:10px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--ink);background:var(--yellow);border-radius:999px;padding:2px 9px;z-index:2}
+#bubble .bfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;min-height:30px}
+#bubble .bfoot:empty{min-height:0;margin:0}
+#bubble .bfoot a.store{margin-top:0}
+#bubble button.next{margin-left:auto;background:var(--green);color:var(--ink);border:2px solid var(--brown);border-radius:999px;padding:4px 14px;font-weight:900;font-family:var(--display);font-size:14px}
+#bubble.show{cursor:pointer}#bubble:not(.show){pointer-events:none}
+#bubble.pointing{border-color:var(--orange)}
+body.spotting #quinn{z-index:45}
+#spot{position:fixed;inset:0;pointer-events:none}
+#spot .sh{z-index:40;position:fixed;background:rgba(4,8,4,.72);pointer-events:auto}
+#spot .sh.plug{background:transparent}
+#spot .ring{z-index:46;position:fixed;border:3px solid var(--orange);border-radius:14px;pointer-events:none;box-shadow:0 0 0 3px #ec802455,0 0 18px 4px #ec802488;animation:ringpulse 1.6s ease-in-out infinite}
+@keyframes ringpulse{50%{transform:scale(1.015);box-shadow:0 0 0 9px #ec802433,0 0 26px 8px #ec8024aa}}
+#spot .arrow{z-index:46;position:fixed;width:40px;height:40px;pointer-events:none;filter:drop-shadow(0 2px 3px #000a)}
+/* bobs along its own x axis (the arrow div carries the placeSpot rotate, so this follows the pointing direction) */
+#spot .arrow svg{display:block;animation:arrownudge 1.1s ease-in-out infinite}
+@keyframes arrownudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+/* one-shot sweep: a bright arc runs once around the ring when the target changes (ui.js showSpot adds .sweep for 950 ms) */
+@property --sw{syntax:"<angle>";inherits:false;initial-value:0deg}
+#spot .ring.sweep:after{content:"";position:absolute;inset:-3px;border-radius:inherit;padding:5px;pointer-events:none;
+  background:conic-gradient(from var(--sw),transparent 0 62%,#ffb25e 82%,#fff3d6 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;
+  animation:ringsweep .9s ease-out 1 both}
+@keyframes ringsweep{0%{--sw:0deg;opacity:0}12%{opacity:1}80%{opacity:1}100%{--sw:360deg;opacity:0}}
+/* "look at your plant" beat: a softer dim so the tent stays readable */
+#spot.look-tent .sh{background:rgba(4,8,4,.35)}
+@media (max-width:820px){.titlecard{flex-direction:column;flex-wrap:nowrap}#titleAxel{width:140px;height:182px}.scores{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){#pausedtag{top:4px;right:6px;font-size:10px}#bubble a.store{font-size:13px;padding:4px 9px}.badges{gap:8px}}
+
+/* ===== Phone / tablet layout =====
+   >=900px : desktop grid above (unchanged)
+   600-899 : stage left, panels stacked right, action bar fixed at the bottom
+   <600    : one column, stage on top, swipeable 3-panel strip, action bar fixed at the bottom
+   Wrappers that only exist for small screens are display:none / display:contents on desktop. */
+html,body,button,a,label,input,select,[role=button]{touch-action:manipulation}
+.sidewrap,#rpanel,#actionbar,#dock,#hextras,.hstats{display:contents}
+#dock{display:flex}
+#stripDots,#cartPanel,#sheetExtras,#moreBtn,#sheetBack{display:none}
+.rdx{display:none}
+#a2hs{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:10px;min-height:48px;background:var(--orange);color:var(--ink);border:3px solid var(--brown);border-radius:999px;padding:6px 8px 6px 18px;font-weight:900;font-family:var(--display);font-size:15px;box-shadow:0 6px 24px #000a}
+#a2hs span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#00000022}
+
+@media (max-width:899px){
+  :root{--barh:72px}
+  html{-webkit-text-size-adjust:100%}
+  body{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));padding-bottom:calc(var(--barh) + env(safe-area-inset-bottom,0px) + 8px);overflow-x:hidden}
+  #app{padding-block:max(8px,env(safe-area-inset-top,0px)) 8px;overflow-x:clip}
+  button,.mode,.gear,.cmp-ch,.ghost,.menu,.cta{min-height:48px}
+  .opts{min-height:48px;font-size:13px}.opts input{width:22px;height:22px;accent-color:var(--green)}
+
+  /* header: brand + health on top, day/stage + speed below; the rest moves to the More sheet */
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border-radius:14px}
+  header:before{content:"";flex:0 0 100%;height:0;order:3}
+  .brand{order:1;flex:1 1 0;min-width:0;font-size:16px;white-space:nowrap}
+  .s-day{order:2;flex:0 0 auto;min-width:0;align-items:flex-end;text-align:right}.s-day b{font-size:14px;white-space:nowrap}.s-day .bar{width:96px}
+  .s-health{order:4;flex:1 1 0;min-width:90px}.s-health .bar{width:100%}
+  #speed{order:5;flex:0 0 auto;margin-left:0}
+  #speedbtns{gap:4px}
+  #speed button{min-width:48px;min-height:48px;padding:0 6px}
+  #cartChip{display:none}
+  #livechip{order:6;flex:0 0 100%}
+  #offline{margin-top:8px}
+
+  /* stage + panels */
+  main{margin-top:8px;gap:10px}
+  #tent{padding:4px}
+  .side{display:flex;flex-direction:column;gap:10px}
+  .quinn-svg{width:96px;height:125px}
+  #quinn{min-height:150px;align-items:center}
+  #bubble{font-size:14px;padding:10px 12px;margin-bottom:0}
+  /* v38: with no line up, the Axel panel used to be a 190 px empty dark box under the scene (critic round 2, N3); it collapses to a 64 px sprite until Axel speaks */
+  body:not(.spotting) #quinn:has(#bubble:not(.show)):not(:has(#slotStrip:not(:empty))){min-height:0;padding-top:4px}
+  body:not(.spotting) #quinn:has(#bubble:not(.show)),body.bg-on:not(.spotting) #quinn:has(#bubble:not(.show)){padding-bottom:6px} /* no Got it to keep clear of the pager pill */
+  body:not(.spotting) #quinn:has(#bubble:not(.show)) .quinn-svg{width:64px;height:83px;transition:width .2s,height .2s}
+  body:not(.spotting) #quinn:has(#bubble:not(.show)) #bubble{display:none}
+  #readings{grid-template-columns:repeat(2,1fr);gap:8px}
+  #rpanel{display:flex;flex-direction:column;gap:6px}
+  .rd{cursor:pointer;min-height:48px;padding:5px 20px 5px 9px;gap:0 6px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;-webkit-tap-highlight-color:transparent}.rd>span{grid-column:1;grid-row:1}.rd>b{grid-column:2;grid-row:1;text-align:right}.rd>small,.rd>.rdx{grid-column:1/-1}.rd b{font-size:16px;line-height:1.15}.rd span{font-size:10.5px}.rd small{font-size:10px}
+  .rd:after{content:"\25BE";position:absolute;right:8px;bottom:5px;font-size:11px;color:var(--muted)}
+  .rd.open:after{content:"\25B4"}
+  .rd.open{grid-column:1/-1}
+  .rd.open .rdx{display:block;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+  .rdw{margin-top:6px;font-size:12.5px;line-height:1.35;color:var(--text)}.rdw strong{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)} /* v36c */
+  .rdt{font-size:12.5px;font-weight:800;color:var(--text)}.rdl,.rdr{font-size:11px;color:var(--muted)}
+  .rdx .spark{height:54px}
+  /* EC / pH gauge: target text left, 56x31 gauge right (second grid row), so the tile stays under ~64 px tall */
+  .rd.hasg>small{grid-column:1;grid-row:2;align-self:center}
+  .rd.hasg>.rdg{grid-column:2;grid-row:2;width:56px;height:31px;margin:0;justify-self:end}
+  #wx{order:6;flex:0 0 auto}
+  #cartPanel{display:flex;flex-direction:column;justify-content:center;gap:10px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:14px}
+  #cartPanel h3{margin:0;font:700 16px var(--display)}#cartPanel p{margin:0;color:var(--muted);font-size:13px}
+  #cartChipM{align-self:flex-start;font-size:15px;padding:10px 14px;min-height:48px;display:inline-flex;align-items:center}
+  #cartPanel .big{align-self:flex-start}
+
+  /* v36 design pass: the bottom action bar. ONE rule set. #actionbar is a grid; #dock, .grp and .btns are display:contents so every action (and More) is a grid cell.
+     ui.js sets --cols from BarLayout (two rows of 44 px buttons at 480 px and under when there are more than 5 actions, else one row). More opens a sheet with the extras only. */
+  #actionbar{display:grid;grid-template-columns:repeat(var(--cols,5),minmax(0,1fr));grid-auto-rows:minmax(44px,auto);gap:4px;position:fixed;left:0;right:0;bottom:0;z-index:4;align-items:stretch;padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));background:var(--panel);border-top:2px solid var(--line)}
+  #dock,.grp,.btns{display:contents}
+  #dock h4{display:none}
+  #dock button,#moreBtn{min-width:0;min-height:44px;padding:3px 1px;font-size:11px;line-height:1.1;gap:1px;border-radius:12px;justify-content:center}
+  #dock button span{overflow-wrap:anywhere;text-align:center}
+  #dock button svg{width:22px;height:22px;flex:none}
+  #moreBtn{display:flex;flex-direction:column;align-items:center;background:var(--panel2);border:2px solid var(--line);font-weight:800}
+  #moreBtn b{font-size:20px;line-height:1}
+  #sheetBack{display:none}
+  body.sheet-open #sheetBack{display:block;position:fixed;inset:0;background:#000b;z-index:3}
+  #actionbar.open{display:flex;flex-direction:column;align-items:stretch;gap:10px;max-height:80vh;max-height:80svh;overflow-y:auto;overscroll-behavior:contain;border-radius:18px 18px 0 0;box-shadow:0 -10px 40px #000c}
+  #actionbar.open #dock{display:none}
+  #actionbar.open #moreBtn{order:-2;flex-direction:row;font-size:14px;gap:8px;min-height:48px}
+  #actionbar.open #moreBtn b{font-size:18px}
+  #actionbar.open #sheetExtras{display:flex;flex-wrap:wrap;gap:10px;order:-1}
+  #dockOverflow{display:none}
+  #actionbar.open #dockOverflow{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;flex:1 1 100%}
+  #actionbar.open #dockOverflow button{min-height:56px}
+  #dockOverflow button{background:var(--panel2);border:2px solid var(--line);border-radius:12px;color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 2px;font-size:12px;font-weight:800;line-height:1.1}#dockOverflow button.ready{border-color:var(--orange)}#dockOverflow button:disabled{opacity:.4;cursor:not-allowed}#dockOverflow button svg{width:22px;height:22px;flex:none} /* v45: the More sheet's action buttons were the browser's default grey; now the same dark fill as the dock */
+  #sheetExtras .hstats{display:flex;flex:1 1 100%;gap:10px;justify-content:space-between}
+  #sheetExtras .hstats .stat{min-width:0;flex:1}
+  #sheetExtras #hextras{display:flex;flex:1 1 100%;gap:8px}
+  #sheetExtras #hextras button{flex:1;min-height:48px}
+  #a2hs{bottom:calc(var(--barh) + env(safe-area-inset-bottom,0px) + 12px)}
+}
+
+/* tablet / landscape phone: stage left, panels right */
+@media (min-width:600px) and (max-width:899px){
+  main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  #tent svg{max-height:calc(100vh - 150px);max-height:calc(100svh - 150px);margin:0 auto}
+}
+@media (max-width:899px) and (orientation:landscape) and (max-height:520px){
+  :root{--barh:60px}
+  #dock button,#moreBtn{min-height:44px;flex-direction:row;gap:4px}
+  #tent svg{max-height:calc(100svh - 130px)}
+}
+
+/* phone portrait: one column, fixed-height stage, swipeable strip */
+@media (max-width:599px){
+  main{grid-template-columns:minmax(0,1fr)}
+  #tent{height:min(calc(100vw - 20px),40vh);height:min(calc(100vw - 20px),40svh);min-height:250px}
+  #tent svg{width:100%;height:100%}
+  .sidewrap{display:block;min-width:0}
+  .side{flex-direction:row;gap:10px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:flex-start} /* v49: each swipe page keeps its own height, so an idle Axel panel is not stretched to the readings page (play-test #8 item 7) */
+  .side::-webkit-scrollbar{display:none}
+  .side>*{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
+  #stripDots{display:flex;justify-content:center;margin-top:2px}
+  #stripDots button{width:48px;height:36px;background:none;border:0;padding:0;display:grid;place-items:center;min-height:0}
+  #stripDots button:before{content:"";width:9px;height:9px;border-radius:99px;background:var(--line);transition:width .2s,background .2s}
+  #stripDots button.on:before{width:22px;background:var(--green)}
+  #stripDots button.alert:before{background:var(--orange);animation:bob 1s infinite}
+  /* while Axel points at something in another panel his bubble floats under the header so both stay visible */
+  body.spotting #bubble{position:fixed;top:calc(var(--hdrb,120px) + 6px);left:12px;right:12px;margin:0;z-index:47;box-shadow:0 8px 30px #000b}
+  body.spotting #bubble:after{display:none}
+
+  /* full-screen modals with a sticky footer */
+  .modal{padding:0;align-items:stretch}
+  .card,.modal#cartDrawer .card{display:flex;flex-direction:column;width:100%;max-width:none;height:100%;max-height:none;border:0;border-radius:0;padding:max(14px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+  .card h2{font-size:22px}
+  .card>*{flex-shrink:0}
+  #campScene{height:auto}
+  .card>.foot,.modal#cartDrawer .cact{position:sticky;bottom:0;z-index:2;margin:auto -14px 0;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:2px solid var(--line);flex-wrap:wrap}
+  .card>.foot .big,.modal#cartDrawer .cact .big,.modal#cartDrawer .cact .ghost{flex:1 1 140px;text-align:center}
+  .card>.foot{margin-top:auto}
+  .card:not(.titlecard)>*:not(.foot):nth-last-child(2){margin-bottom:16px}
+  .modal#cartDrawer .ctot{margin-bottom:8px}
+  .modal#cartDrawer .cqty button,.modal#cartDrawer .crm{min-width:48px;min-height:48px}
+  .modal#cartDrawer .crow{flex-wrap:wrap}
+  .titlecard{align-items:center;gap:6px;justify-content:flex-start}
+  #titleAxel{width:120px;height:156px}
+  .tbody{width:100%}.tbody .ttl{font-size:42px}
+  .mode{min-height:56px}
+  .scores b{font-size:18px}
+  .cropgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gear{min-width:0}
+  .presets .gear{min-width:0}
+  .stars{font-size:38px}
+  .ctas .cta{flex:1 1 100%;text-align:center}
+}
+/* ===== Accessibility and reduced-motion pass (pairs with a11y.js) =====
+   Visible focus on every control, 44px touch targets on coarse pointers, contrast fixes, and the JS-driven motion
+   (parallax layers, Axel's breathing, plant sway, reservoir bubbles) switched off under prefers-reduced-motion. */
+.sr-only{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+:is(a,button,input,select,textarea,summary,[tabindex],[role=button]):focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.stv .stv-opt:focus-visible,.stv .stv-skip:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+h1[tabindex="-1"]:focus,h2[tabindex="-1"]:focus,.card[tabindex="-1"]:focus,.modal[tabindex="-1"]:focus{outline:none}
+/* contrast: #444 difficulty pips and #333 unearned stars measured 1.72:1 / 1.46:1 on the panels; #8a8a8a is 4.85:1 / 5.33:1.
+   The .rd.unknown border (#555, 2.47:1) is a UI boundary and needs 3:1. The story backdrop label at .45 opacity was 2.65:1. */
+.diff s{color:#8a8a8a}.stars span{color:#8a8a8a}.stars span.on{color:var(--yellow)} /* v49b: earned stars stay yellow (play-test #9) */.rd.unknown{border-left-color:#8a8a8a}
+.stv .stv-bg .stv-bglabel{opacity:.8}
+/* touch targets: the strip dots were 48x36; everything else gets 44px wherever the pointer is a finger
+   (phones already get 48px from the <900px rules above, this covers tablets on the desktop grid) */
+#stripDots button{height:44px}
+@media (pointer:coarse){
+  button,[role=button],.menu,.ghost,.mode,.gear,.cta,a.store,#bubble button.next,.opts{min-height:44px}
+  #speed button,#mute{min-width:44px}.opts input{width:24px;height:24px}
+}
+/* reduced motion: the rule near the top stops keyframes and transitions; these stop motion that scripts drive with inline styles */
+@media (prefers-reduced-motion:reduce){
+  .scene-stage img{transform:none!important;opacity:1!important}
+  .quinn-svg .axel>g,#titleAxel .axel>g,.quinn-svg .q-body,.quinn-svg .q-head{transform:none!important}
+  #tent svg .sway{transform:none!important}
+  #tent svg circle[fill="#e8f8ff"]{display:none}
+  #spot .ring.sweep:after{display:none}#wx .wxw{animation:none!important}
+  #spot .arrow svg,#spot .ring,.rd.bad,#dock button.ready,.badge.on svg,#stripDots button.alert,.fx-pop,.fx-flash-good,.fx-flash-warn,.fx-flash-bad{animation:none!important}
+}
+body:has(.modal.show) #a2hs{display:none} /* v66 (round 15 keyboard m8): the Add to home screen pill floated over an open card where Tab could not reach it */
+</style>
+<style id="splashCss">
+/* v41 cold-load splash: inline, no assets. #app stays hidden (visibility only, layout unchanged) until ui.js removes the splash. */
+html.booting #app{visibility:hidden}
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#121512;color:#e8efe8;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}
+#splash b{font-size:28px;letter-spacing:.5px;font-weight:900}#splash b i{font-style:normal;color:#6ec846}
+#splash svg{width:84px;height:84px}
+#splash span{font-size:15px;color:#a9b4a9}
+#splash small{font-size:12px;color:#7d897d;min-height:14px}
+</style>
+<div id="splash" role="status" aria-live="polite"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#6ec846"/><path d="M32 52V30M32 36q-12 0-12-12 12 0 12 12zM32 32q12 0 12-12-12 0-12 12z" fill="#121512" stroke="#121512" stroke-width="2" stroke-linejoin="round"/></svg><b>HY<i>GROW</i> Grow Sim</b><span>Axel is setting up the grow room</span><small id="splashVer"></small></div>
+<script>document.documentElement.classList.add('booting');(function(){var d=document;function go(){var q=location.search;location.replace(location.pathname+(q?q+'&':'?')+'r='+Date.now()+location.hash)}function fail(){var s=d.getElementById('splash');if(!s)return;s.children[2].textContent="Couldn't load the game. Check your connection and tap to retry.";s.onclick=go}
+addEventListener('error',function(e){var t=e.target;if(t.tagName=='SCRIPT'&&t.src.slice(-10)!='version.js')fail()},1);
+d.addEventListener('load',function(e){var t=e.target,o=window.HYGROW_VERSION;if(t.tagName=='SCRIPT'&&t.src.slice(-10)=='version.js'&&o)d.getElementById('splashVer').textContent=o.game+(o.build!='dev'?' · '+o.build:'')},1);setTimeout(function(){if(!(window.Sim&&window.__game))return fail();var s=d.getElementById('splash');d.documentElement.classList.remove('booting');if(s)s.remove()},20000)})()</script><!-- v41: ui.js removes the splash; 20 s failsafe -->
+<div id="app">
+  <a class="skiplink" href="#actionbar" id="skipDock">Skip to the grow actions</a><!-- v37 [m7] -->
+  <header>
+    <h1 class="brand">HY<span>GROW</span> Grow Sim</h1>
+    <span id="livechip" hidden></span>
+    <span id="wx" hidden></span>
+    <div class="stat s-day"><b id="day">Day 0</b><span id="stage">Setup</span><div class="bar" role="progressbar" aria-label="Stage progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="stagebar" style="width:0"></i></div></div>
+    <div class="stat s-health">Health<div class="bar" role="progressbar" aria-label="Plant health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="health" style="width:100%"></i></div></div>
+    <div class="hstats"><div class="stat">Eco score<b id="eco">0</b></div>
+    <div class="stat">Spent<b id="spent">$0</b></div>
+    <div class="stat">Picked<b id="picked">0.00 kg</b></div></div>
+    <div id="speed"><span id="speedbtns" role="group" aria-label="Game speed"><button data-s="0" title="Pause" aria-label="Pause">II</button><button data-s="1" title="Normal speed" aria-label="Normal speed">1x</button><button data-s="3" title="3 times speed" aria-label="3 times speed">3x</button><button data-s="8" title="8 times speed" aria-label="8 times speed">8x</button></span><span id="cartChip"></span><span id="hextras"><button id="jbtn" class="menu" title="Grow journal">Journal</button><button id="abtn" class="menu" title="Almanac">Almanac</button><button id="mute" title="Sound on/off" aria-label="Sound on or off">🔊</button><button id="menu" class="menu" title="Menu">Menu</button></span></div>
+  </header>
+  <div id="trouble" role="group" aria-label="Tiles that need a look" hidden></div><!-- v36b: one chip per orange or red tile -->
+  <div id="offline" role="status" hidden><span id="offtext">Sensor offline — using the model until it's back</span><button id="relink" class="menu" hidden>Reconnect</button></div>
+  <main>
+    <div id="tent"></div>
+    <div class="sidewrap">
+      <div class="side">
+        <div id="quinn"><div id="pausedtag" hidden>Paused<span class="pt-more"> while Axel talks</span></div><div id="bubble"></div><div id="pins" aria-label="Key readings"></div><div id="slotStrip" role="group" aria-label="Tower slots"></div></div>
+        <div id="rpanel">
+          <div id="readings"></div>
+          <label class="opts"><input type="checkbox" id="autopause" checked> Hold the clock on a serious problem</label>
+        </div>
+        <div id="cartPanel"><h3 aria-level="2">Your cart</h3><span id="cartChipM"></span><p>Gear Axel suggests lands here. Checkout is at HyGrow.</p><button id="openCart" class="big" type="button">Open cart</button></div>
+      </div>
+      <div id="stripDots" role="group" aria-label="Panels"><button type="button" aria-label="Axel"></button><button type="button" aria-label="Readings"></button><button type="button" aria-label="Cart"></button></div>
+    </div>
+  </main>
+  <div id="sheetBack"></div>
+  <div id="actionbar" role="region" aria-label="Grow actions"><div id="sheetExtras"></div><div id="dock"></div><button id="moreBtn" type="button" aria-expanded="false" aria-controls="actionbar"><b aria-hidden="true">&#8943;</b><span>More</span></button></div>
+  <footer class="sr-only">Grow Sim by HyGrow Hydroponics, Byford WA. Gear links open the HyGrow store in a new tab.</footer>
+</div>
+
+<div class="modal" id="title"><div class="card titlecard">
+  <button id="titleMute" class="tmute" type="button" aria-label="Sound on or off" aria-pressed="false">🔇</button><!-- v37 [M28] -->
+  <div id="title-bg" aria-hidden="true"></div>
+  <svg id="titleAxel" viewBox="0 0 200 260" aria-hidden="true"></svg>
+  <div class="tbody"><div class="kicker">HyGrow Hydroponics presents</div><h2 class="ttl">Grow Sim</h2><p>Grow real crops with real HyGrow gear. Axel the axolotl has your back.</p><div id="titleBubble" role="status" aria-live="polite"></div>
+  <button class="big" id="continue" hidden>Continue my grow</button>
+  <button class="mode primary" data-mode="grow" id="modeGrow"><b>Start growing</b><span>Pick where, how and what. Axel shows you the first jobs.</span></button>
+  <details id="moreWays" class="more"><summary>More ways to play</summary>
+  <div class="today" id="today"><div class="tpills" id="todayPills" role="group" aria-label="Today"></div><div class="tpanels" id="todayPanels"></div></div>
+  <div class="modes"><button class="mode" data-mode="beginner" id="modeBeginner"><b>Guided lesson</b><span>A five-step practice grow, one tap at a time.</span></button><button class="mode" data-mode="campaign"><b>Campaign</b><span>Your first season — story mode</span></button><button class="mode" data-mode="challenge"><b>Weekly challenge</b><span id="chalBlurb">Same seed for everyone, new each week.</span></button><button class="mode" data-mode="learn"><b>Learn to grow</b><span>Axel explains every reading as it comes up.</span></button><button class="mode" data-mode="free"><b>Free grow</b><span>No glowing hints. Ask Axel when you want him. Real consequences.</span></button><button class="mode" data-mode="live"><b>Live link — hook up your grow room</b><span>Connect a real sensor and the virtual plant lives in your room's air.</span></button><button class="mode" data-mode="mysetup"><b>Replay my setup</b><span>Import a CSV from your controller and see how a plant would cope.</span></button></div>
+  </details><p id="verLine" class="verline"></p><!-- v41 --><p class="creditsrow"><button class="ghost" id="creditsBtn" type="button">Credits</button></p><!-- v37 --></div>
+</div></div>
+
+<style id="titleCss">
+/* title screen: primary CTA, "Today" strip (daily / events / weekly pills that expand to cards), mode cards. Desktop keeps the roomy single column; <900px goes compact. */
+#continue{display:block;width:100%;margin:0 0 8px}#continue[hidden]{display:none}
+.mode[data-mode=campaign]{border-color:var(--green)}
+/* title backdrop breathes 1.00 -> 1.03 -> 1.00 over 40 s (the painted stage scales inside the clipped frame; transform only) */
+@keyframes titleBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+#title.show #title-bg .scene-stage{animation:titleBreathe 40s ease-in-out infinite;transform-origin:50% 60%}
+@media (prefers-reduced-motion:reduce){#title-bg .scene-stage{animation:none!important}}
+.today{margin:0}.tpills{display:none}.tpanel{display:block}
+.tcard{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:10px 12px;font-size:14px;text-align:left}
+.tcard b{display:block;font-family:var(--display);font-size:16px}.tcard p{margin:4px 0 0;font-size:13px;color:var(--muted);overflow-wrap:anywhere}.tcard button{margin-top:8px;min-height:44px}
+@media (max-width:899px){
+  .titlecard{display:grid;grid-template-columns:96px minmax(0,1fr);column-gap:12px;row-gap:8px;align-items:start;align-content:start;justify-content:stretch}
+  #title-bg{grid-column:1/-1;grid-row:1;width:auto;height:clamp(96px,24vw,190px);max-height:22vh}
+  #titleAxel{grid-column:1;grid-row:2/span 3;width:96px;height:125px}
+  .tbody{display:contents}
+  .tbody .kicker,.tbody .ttl,.tbody p{grid-column:2;margin:0}
+  .tbody .kicker{grid-row:2;font-size:11px}.tbody .ttl{grid-row:3;font-size:34px}.tbody p{grid-row:4;font-size:13px;line-height:1.4;max-width:none}
+  #continue,.today,.modes{grid-column:1/-1}
+  .tbody .verline,.tbody .creditsrow{grid-column:1/-1;grid-row:auto} /* v49: the version line and Credits sat in Axel's second column, 54 px right of centre (critic #10); .tbody p above pins them to column 2 and row 4 */
+  #continue{margin:0}
+  .modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .mode{min-height:48px;padding:9px 11px;gap:3px;border-radius:12px}
+  .mode b{font-size:15px;line-height:1.2}.mode span{font-size:12px;line-height:1.3}
+  .titlecard:not(:has(#continue:not([hidden]))) .mode[data-mode=campaign],.titlecard:not(:has(#continue:not([hidden]))) .mode[data-mode=mysetup]{grid-column:1/-1}
+  .tpills{display:flex;flex-wrap:wrap;gap:6px}
+  .tpill{display:inline-flex;align-items:center;gap:6px;min-height:44px;max-width:100%;padding:6px 12px;border-radius:999px;border:2px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-size:13px;font-weight:800;text-align:left;cursor:pointer}
+  .tpill:after{content:"\25BE";font-size:11px;color:var(--muted);transition:transform .2s}
+  .tpill.done{border-color:var(--green)}
+  .tpill[aria-expanded=true]{border-color:var(--orange)}.tpill[aria-expanded=true]:after{transform:rotate(180deg)}
+  .tpanel{display:grid;grid-template-rows:0fr;visibility:hidden;transition:grid-template-rows .22s ease,visibility 0s .22s}
+  .tpanel.open{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .22s ease}
+  .tpin{min-height:0;overflow:hidden}
+  #today .tpin>*{margin:8px 0 0}
+  @media (prefers-reduced-motion:reduce){.tpanel,.tpanel.open,.tpill:after{transition:none}}
+}
+@media (min-width:900px){#tp-weekly{display:none}}
+</style>
+<style id="cardsCss">
+/* Cards (cards.js): "You just learned" bottom sheet, toast, Almanac Basics shelf */
+#learnCard{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:58;width:min(calc(100vw - 24px),440px);box-sizing:border-box;display:none;align-items:center;gap:12px;padding:12px;background:var(--panel);border:2px solid var(--green);border-radius:16px;box-shadow:0 -4px 22px #000a;transform:translate(-50%,0)}
+#learnCard.in,#learnCard.out{display:flex}
+#learnCard.in{animation:lcUp .34s cubic-bezier(.2,1.1,.4,1)}
+#learnCard.out{animation:lcDown .28s ease-in forwards;pointer-events:none}
+@keyframes lcUp{from{transform:translate(-50%,130%);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes lcDown{from{transform:translate(-50%,0);opacity:1}to{transform:translate(-50%,130%);opacity:0}}
+#learnCard .lc-g{flex:none;width:56px;height:56px;border-radius:50%;background:var(--panel2);border:2px solid var(--line);display:flex;align-items:center;justify-content:center}
+#learnCard .lc-t{flex:1;min-width:0}
+#learnCard .lc-h{display:block;font-family:var(--display);font-size:16px;color:var(--green);line-height:1.2}
+#learnCard .lc-p{margin:3px 0 0;font-size:14px;line-height:1.35;color:var(--text)}
+#learnCard .lc-ok{flex:none;min-width:84px;min-height:44px;padding:6px 14px;background:var(--green);color:var(--ink);border:2px solid var(--brown);border-radius:12px;font-weight:900}
+@media (max-width:899px){#learnCard{bottom:calc(var(--dock-h,72px) + 8px)}} /* phones/tablets: above the fixed action bar; cards.js sets --dock-h from its height */
+#cardToast{position:fixed;left:50%;top:max(10px,env(safe-area-inset-top,0px));z-index:59;transform:translate(-50%,-160%);max-width:min(92vw,360px);padding:8px 16px;background:var(--panel);border:2px solid var(--line);border-radius:999px;font-weight:800;font-size:14px;box-shadow:0 6px 18px #0008;opacity:0;pointer-events:none;transition:transform .25s ease,opacity .2s}
+#cardToast.show{opacity:1;transform:translate(-50%,0)}
+#almanac .bhd{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;font-family:var(--display);color:var(--green);border-bottom:2px solid var(--line);padding-bottom:4px}
+#almanac .bhd span{margin-left:auto;font-size:12px;color:var(--muted);font-family:var(--body)}
+#almanac .bas .bg{flex:none;display:inline-flex;width:34px;height:34px}
+@media (prefers-reduced-motion:reduce){#learnCard.in,#learnCard.out{animation:none!important}#learnCard.out{display:none}#cardToast{transition:none}}
+</style>
+<style id="frictionCss">
+/* Beginner-friction fixes (PLAYTEST-RUTH-v18): cards always have a button, Axel's panel never covers the dock, shop pills stay away from Next,
+   the pager dots sit above the action bar, and small toasts say what a tap did. */
+#bubble .bfoot{flex-direction:column;align-items:stretch;gap:10px;justify-content:flex-start}
+#bubble .bfoot button.next{align-self:flex-end;margin-left:0;order:0}
+#bubble .bfoot a.store{order:1;align-self:flex-start;margin-top:0;display:inline-flex;align-items:center;min-height:40px;background:transparent;color:var(--brown);border:2px solid var(--orange);font-size:13px}
+#bubble .bfoot .cart-add{order:2;align-self:flex-start}
+#bubble button.next.skip{background:transparent;color:var(--brown)}
+#tent,#quinn .quinn-svg{cursor:pointer}
+@media (max-width:599px){
+  body.spotting #quinn{z-index:auto} /* phones: the card is fixed under the header, so Axel's panel must not stack above (and cover) the action bar */
+  #stripDots{position:sticky;bottom:calc(var(--barh,72px) + 6px);z-index:6;width:max-content;margin:2px auto 0;padding:0 8px;background:#121512ee;border:2px solid var(--line);border-radius:999px}
+  body.sheet-open #stripDots{display:none}
+  body:not(.bg-on) #quinn{padding-bottom:52px} /* room for the sticky pager dots */
+}
+#swipeHint{position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);width:92px;text-align:center;line-height:1.15;pointer-events:none;background:var(--orange);color:var(--ink);font-weight:900;font-size:12px;padding:4px 8px;border:2px solid var(--brown);border-radius:14px;animation:swNudge 1.2s ease-in-out infinite;box-shadow:0 4px 14px #0009}
+@keyframes swNudge{50%{transform:translate(6px,-50%)}}
+#toast{position:fixed;left:50%;bottom:calc(var(--barh,16px) + 12px);z-index:62;max-width:min(92vw,380px);padding:9px 16px;background:var(--panel);color:var(--text);border:2px solid var(--green);border-radius:18px;font-weight:800;font-size:14px;line-height:1.3;text-align:center;box-shadow:0 6px 18px #0008;opacity:0;transform:translate(-50%,10px);pointer-events:none;transition:opacity .2s,transform .2s}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+body:has(#learnCard.in) #toast{bottom:calc(var(--barh,16px) + 112px)}
+.plog{margin:0 0 8px;padding-left:18px;color:var(--muted);font-size:13px}.plog b{color:var(--text)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}#swipeHint{animation:none!important}}
+/* pass 4: first-visit sound chip (ui.js SoundChip), first-harvest banner (fx.js firstHarvestBanner), in-game Menu (ui.js MenuModal) */
+#soundChip{position:fixed;right:10px;top:64px;z-index:56;max-width:min(92vw,300px);min-height:44px;padding:6px 14px;background:var(--panel);color:var(--text);border:2px solid var(--line);border-radius:999px;font:800 13px/1.2 var(--body);box-shadow:0 6px 18px #0008;cursor:pointer;text-align:left}
+#soundChip:hover,#soundChip:focus-visible{border-color:var(--green)}
+/* the one-time chip, the strip pager and the swipe hint are game-view furniture: never over a modal (menu, journal, harvest, title) */
+body:has(.modal.show) #soundChip,body:has(.modal.show) #stripDots,body:has(.modal.show) #swipeHint{display:none!important}
+@media (max-width:599px){#soundChip{right:8px;left:8px;max-width:none;text-align:center}}
+.fh-banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin:10px 0;padding:10px 14px;background:var(--panel2);border:2px solid var(--green);border-radius:14px;font-weight:800}
+.fh-banner b{color:var(--green)}
+.fh-share{min-height:44px;padding:6px 18px;border-radius:999px;border:3px solid var(--brown);background:var(--green);color:var(--ink);font:900 15px var(--display)}
+#menuModal .menucard{max-width:420px}#menuModal .menulist{display:flex;flex-direction:column;gap:10px;margin:12px 0}#menuModal .menulist .mode{width:100%}#menuModal .card>p{color:var(--text);margin:8px 0 0}
+</style>
+<script>
+/* Today strip helper for the title screen. Daily / Events / Challenge each register a panel + pill(s); one panel open at a time (accordion), choice kept in localStorage hygrow_title_ui_v1. */
+(function () {
+  var LS = 'hygrow_title_ui_v1', T = window.TitleToday = {};
+  function rd() { try { var o = JSON.parse(localStorage.getItem(LS)); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+  var open = rd().today || null;
+  function q(id) { return document.getElementById(id); }
+  function sync() {
+    var pills = document.querySelectorAll('#todayPills .tpill'), panels = document.querySelectorAll('#todayPanels .tpanel'), i;
+    for (i = 0; i < pills.length; i++) pills[i].setAttribute('aria-expanded', pills[i].getAttribute('data-key') === open ? 'true' : 'false');
+    for (i = 0; i < panels.length; i++) panels[i].classList.toggle('open', panels[i].getAttribute('data-key') === open);
+  }
+  /* insert el before the first sibling with a higher order so DOM (tab) order matches the visual order */
+  function put(parent, el, sel, order) {
+    var sib = parent.querySelectorAll(sel), i;
+    for (i = 0; i < sib.length; i++) if ((+sib[i].style.order || 0) > order) { parent.insertBefore(el, sib[i]); return; }
+    parent.appendChild(el);
+  }
+  function toggle(key) {
+    open = open === key ? null : key;
+    var o = rd(); o.today = open; try { localStorage.setItem(LS, JSON.stringify(o)); } catch (e) {}
+    sync();
+  }
+  /* set(key, order, node, [{text, cls}]): create/refresh the pill(s) and the panel holding node. Returns false if the strip is missing. */
+  T.set = function (key, order, node, labels) {
+    var pills = q('todayPills'), panels = q('todayPanels'); if (!pills || !panels) return false;
+    var pid = 'tp-' + key, pan = q(pid), ex = pills.querySelectorAll('.tpill[data-key="' + key + '"]'), i, b;
+    if (!pan) { pan = document.createElement('div'); pan.className = 'tpanel'; pan.id = pid; pan.setAttribute('data-key', key); pan.setAttribute('role', 'region'); pan.innerHTML = '<div class="tpin"></div>'; put(panels, pan, '.tpanel', order); }
+    pan.style.order = order; pan.setAttribute('aria-labelledby', 'tpill-' + key + '-0');
+    if (node && node.parentNode !== pan.firstChild) { pan.firstChild.textContent = ''; pan.firstChild.appendChild(node); }
+    for (i = 0; i < labels.length; i++) {
+      b = ex[i];
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'tpill-' + key + '-' + i; b.setAttribute('data-key', key); b.setAttribute('aria-controls', pid); b.setAttribute('aria-expanded', 'false'); put(pills, b, '.tpill', order); }
+      if (b.textContent !== labels[i].text) b.textContent = labels[i].text;
+      b.className = 'tpill' + (labels[i].cls ? ' ' + labels[i].cls : ''); b.style.order = order;
+    }
+    for (i = labels.length; i < ex.length; i++) ex[i].remove();
+    sync(); return true;
+  };
+  T.clear = function (key) {
+    var els = document.querySelectorAll('#todayPills .tpill[data-key="' + key + '"], #tp-' + key), i;
+    for (i = 0; i < els.length; i++) els[i].remove();
+  };
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest && e.target.closest('#todayPills .tpill'); if (b) toggle(b.getAttribute('data-key'));
+  });
+})();
+</script>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="setup" role="dialog" aria-modal="true" aria-labelledby="setup-title"><div class="card">
+  <h2 id="setup-title">Where are we growing?</h2><div class="tentline" id="setupLine">Pick one in each row, then Start. Gear is sorted for you.</div>
+  <div id="setupBody"></div>
+  <div class="foot"><button class="ghost" id="back">Back</button><div id="budget"></div><button class="big" id="go">Start</button></div>
+</div></div>
+
+<div class="modal" id="campaign" role="dialog" aria-modal="true" aria-labelledby="campaign-title"><div class="card">
+  <h2 id="campaign-title">Your first season at HyGrow</h2>
+  <div id="campBg" hidden></div><svg id="campScene" viewBox="0 0 400 240" style="width:100%;border-radius:12px"></svg>
+  <div id="campMates"></div><div id="campMenu" style="margin-top:12px"></div><div id="campSide"></div><div id="campExtras"></div>
+  <div class="foot"><span></span><button class="ghost" id="campBack">Back</button></div>
+</div></div>
+
+<div class="modal" id="journal" role="dialog" aria-modal="true" aria-labelledby="journal-title"><div class="card">
+  <h2 id="journal-title">Grow journal</h2><div class="tentline">One note per game day.</div>
+  <div id="journalBody"></div>
+  <div class="foot"><span></span><button class="big" id="jclose">Close</button></div>
+</div></div>
+
+<div class="modal" id="harvest" role="dialog" aria-modal="true" aria-labelledby="harvest-title"><div class="card">
+  <h2 id="harvest-title">Harvest time!</h2><div id="harvestBody"></div>
+  <div class="foot"><span></span><button class="big" id="again">Grow again</button></div>
+</div></div>
+
+<style id="beginnerCss">
+/* Guided scripts (beginner.js): body.bg-on while a method script runs (v36: the bar and every tile stay visible, the asked button glows via .bg-pulse; ui.js render() adds .bg-glow / .bg-flash to tiles listed in #readings[data-bgp] / [data-bgf]). */
+body.bg-on #cartChip,body.bg-on #cartPanel,body.bg-on #rpanel .opts{display:none!important}
+.bg-pulse,.rd.bg-glow{outline:3px solid var(--orange);outline-offset:2px;animation:bgPulse 1.1s ease-in-out infinite}
+#dock button.bg-pulse{animation:bgPulse 1.1s ease-in-out infinite}
+@keyframes bgPulse{50%{box-shadow:0 0 0 7px #ec802444,0 0 22px 6px #ec8024aa}}
+.rd.bg-flash{outline:3px solid var(--green);outline-offset:2px;animation:bgFlash .7s ease-in-out 5}
+@keyframes bgFlash{50%{background:#26361f;box-shadow:0 0 0 5px #6ec84666}}
+body.bg-on .rd{scroll-margin-top:90px;scroll-margin-bottom:150px}
+/* progress strip under the header */
+#bgStrip{display:none;position:relative;align-items:center;gap:6px 10px;flex-wrap:wrap;margin-top:8px;padding:6px 12px 10px;background:var(--panel);border:2px solid var(--orange);border-radius:12px;font-size:13px;line-height:1.25}
+body.bg-on #bgStrip{display:flex}
+#bgStrip .bgs-txt{flex:1 1 0;min-width:0;font-weight:800}
+#bgStrip .bgs-txt b{color:var(--orange)}#bgStrip .bgs-txt em{font-style:normal;color:var(--yellow)}
+#bgStrip[data-tag=nudge]{border-color:var(--yellow)}#bgStrip[data-tag=done]{border-color:var(--green)}
+#bgStrip button{min-height:32px;padding:2px 4px;background:none;border:0;color:var(--muted);font-size:12px;font-weight:700}
+#bgStrip .bgs-leave{text-decoration:underline;font-size:11px;white-space:nowrap}
+#bgStrip .bgs-bar{position:absolute;left:10px;right:10px;bottom:3px;height:3px;background:#0b0e0b;border-radius:3px;overflow:hidden}
+#bgStrip .bgs-bar i{display:block;height:100%;width:0;background:var(--green);transition:width .4s}
+/* title card, trail and finish card */
+.bgt-h{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:900;margin-bottom:6px}
+.bgtrail{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.bgtrail i{font-style:normal;color:var(--muted)}
+.bgt-st{display:inline-flex;align-items:center;min-height:40px;padding:6px 12px;border-radius:999px;border:2px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-size:13px;font-weight:800}
+button.bgt-st:hover,button.bgt-st:focus-visible{border-color:var(--green)}.bgt-st.done{border-color:var(--green);color:var(--green)}
+.bgd p{color:var(--muted)}.bgd-trail{margin:10px 0}
+#bgDone{z-index:60}
+
+/* phones: no swipe strip while learning, one column */
+@media (max-width:599px){body.bg-on .side{flex-direction:column;overflow:visible;scroll-snap-type:none}body.bg-on .side>*{flex:none;width:100%}
+  body.bg-on #tent{height:min(calc(100vw - 20px),30svh);min-height:190px}}
+@media (max-width:899px){
+  body.bg-on #bgStrip{margin-top:6px}
+}
+@media (min-width:900px){
+  #bgStrip{width:100%;max-width:720px;box-sizing:border-box;margin-left:auto;margin-right:auto}
+  .bgd{max-width:560px;text-align:center}.bgd .bgtrail{justify-content:center}.bgd .foot{justify-content:center}
+}
+</style>
+<style id="phoneFixCss">
+/* Phone layout fixes at 375 px (PLAYTEST-RUTH-v28 layout faults 1-5). Phone portrait only; desktop and tablet are untouched.
+   The page itself scrolls (html is the scroller: body overflow-x is hidden and #app uses overflow-x:clip, which makes no scroll container), so a sticky header works. */
+@media (max-width:599px){
+  /* 4: clock, day and stage bar stay on screen when the game auto-scrolls a tile into view. Solid background, the shadow hides the 8px strip of page above it. */
+  header{position:sticky;top:0;z-index:2;background:var(--panel);box-shadow:0 -10px 0 var(--ink),0 8px 10px -6px #000c}
+  body.sheet-open header{z-index:auto}
+
+  /* 2: the pager pill gets its own opaque row above the action bar. The pill keeps its own flow space, so at the end of the page nothing sits under it;
+     while scrolling, content passes beneath the full-width band instead of colliding with the pill or the Open cart button. */
+  #cartPanel{justify-content:flex-start;gap:6px;padding:10px 14px} /* Open cart sits at the top of the cart page, clear of the pager row at the first scroll position */
+  #stripDots{background:var(--panel);box-shadow:0 0 0 100vmax var(--ink);clip-path:inset(-2px -100vmax -6px -100vmax);margin:6px auto calc(-10px - env(safe-area-inset-bottom,0px))}
+
+  /* 1: the one-time sound chip gets its own row between the header and the tent. ui.js place() puts it just under the header with an inline top, so the chip
+     scrolls with the page (absolute, below the sticky header) and main is pushed down by one chip row while it exists. Nothing is covered at any scroll position;
+     scrolling past it simply hides it. */
+  #soundChip{position:absolute;z-index:1;min-height:48px}
+  body:has(#soundChip) main{margin-top:62px}
+  body:has(#soundChip) #tent{height:max(250px,calc(min(100vw - 20px,40svh) - 54px))} /* the chip row is paid for by the tent, so Axel's bubble stays where it was above the pager row */
+  body.bg-on:has(#soundChip) #tent{height:max(190px,calc(min(100vw - 20px,30svh) - 54px))}
+}
+
+/* 3: the More sheet's top row (Journal / Almanac / sound / Voice / Menu / Daily) wraps instead of running off the right edge. */
+@media (max-width:899px){
+  #actionbar.open #sheetExtras #hextras{flex-wrap:wrap}
+  #actionbar.open #sheetExtras #hextras>*{flex:1 1 calc(33.33% - 8px);min-width:0;max-width:100%}
+  #actionbar.open #sheetExtras #hextras>button{flex:1 1 calc(33.33% - 8px);min-height:48px;padding-left:8px;padding-right:8px}
+  #actionbar.open #sheetExtras #hextras #mute{flex:0 0 56px}
+}
+</style>
+<style id="cardPlaceCss">
+/* Learned card placement (PLAYTEST-RUTH-v28 friction 4): the card never covers the reading tile it explains. cards.js sets data-for, --lc-h, and the .anch class;
+   it scrolls the explained tile into view above the card. Phones dock the card full width above the action bar (and the pager band when it shows). */
+#learnCard{max-height:45vh;max-height:45dvh}
+#learnCard .lc-t{min-height:0;max-height:calc(45vh - 28px);max-height:calc(45dvh - 28px);overflow-y:auto;overscroll-behavior:contain}
+@keyframes lcUpA{from{transform:translateY(130%);opacity:0}to{transform:none;opacity:1}}
+@keyframes lcDownA{from{transform:none;opacity:1}to{transform:translateY(130%);opacity:0}}
+@media (max-width:599px){
+  body{--lc-b:calc(var(--barh,72px) + env(safe-area-inset-bottom,0px) + 8px)}
+  body:not(.bg-on){--lc-b:calc(var(--barh,72px) + env(safe-area-inset-bottom,0px) + 62px)} /* the pager band (#stripDots) sits above the bar */
+  #learnCard{left:8px;right:8px;width:auto;bottom:var(--lc-b);transform:none;gap:10px;padding:10px}
+  #learnCard.in{animation-name:lcUpA}
+  #learnCard.out{animation-name:lcDownA}
+  #learnCard .lc-g{width:44px;height:44px}
+  #learnCard .lc-g svg{width:30px;height:30px}
+  #learnCard .lc-ok{min-width:76px;padding:6px 10px}
+  body:has(#learnCard.in){padding-bottom:calc(var(--lc-b) + var(--lc-h,110px) + 16px)} /* scroll room so the readings can rise above the docked card */
+  body:has(#learnCard.in) #toast{bottom:auto;top:calc(var(--hdrb,120px) + 10px)} /* the toast rides under the header while the card is up: not over the card or the tile it explains */
+}
+@media (min-width:600px){
+  #learnCard.anch{left:auto;right:var(--lc-r,12px);width:var(--lc-w,440px);transform:none}
+  #learnCard.anch.in{animation-name:lcUpA}
+  #learnCard.anch.out{animation-name:lcDownA}
+}
+</style>
+<style id="tabletCss">
+/* Tablet and phone layout fixes (PLAYTEST-MARG-v32 frictions 2 and 3, PLAYTEST-JAX-v32 broken 3 and 4). Builds on phoneFixCss / cardPlaceCss; desktop 1200+ with a mouse is untouched.
+   --tbh is the sticky header height and --tsh the coach strip height at tablet widths (guided lesson only, so the header can be a fixed one-row box). */
+
+/* Marg 3: at 600 to 1199 px the stage is capped at half the screen, the header and the "Step N of 12" strip stay pinned under the top edge, and (900 to 1199, where the dock is in the page flow)
+   the dock is pinned to the bottom, so Axel's bubble, the readings, the buttons and the progress are on screen together without scrolling. Short landscape phones keep their own rules. */
+@media (min-width:600px) and (max-width:1199px) and (min-height:560px){
+  :root{--tbh:88px;--tsh:68px}
+  main{grid-template-columns:minmax(0,min(46%,calc(50vh * .78 + 32px))) minmax(0,1fr);align-items:start}
+  #tent{max-height:50vh;max-height:50svh}
+  #tent svg{max-height:calc(50vh - 22px);max-height:calc(50svh - 22px);margin:0 auto}
+  html:has(body.bg-on){scroll-padding-top:calc(var(--tbh) + var(--tsh) + 12px)}
+  body.bg-on header{position:sticky;top:0;z-index:2;height:var(--tbh);flex-wrap:nowrap;overflow:hidden;background:var(--panel);box-shadow:0 -12px 0 var(--ink),0 6px 10px -6px #000c}
+  body.bg-on header:before{display:none}
+  body.sheet-open header{z-index:auto}
+  body.bg-on #bgStrip{position:sticky;top:var(--tbh);z-index:2;width:auto;max-width:none;margin:6px 0 0;box-shadow:0 -6px 0 var(--ink),0 6px 10px -6px #000c}
+}
+@media (min-width:900px) and (max-width:1199px) and (min-height:560px){
+  html:has(body.bg-on){scroll-padding-bottom:120px}
+}
+
+/* Marg 1: finger-sized text on touch tablets (600 to 1199 px): dock labels 15, tile hints 13, coach strip 16, its links 14, buttons 48 tall. */
+@media (min-width:900px) and (max-width:1199px) and (pointer:coarse),(min-width:900px) and (max-width:1199px) and (any-pointer:coarse){
+  #dock button,#moreBtn,#actionbar.open #dock button{font-size:15px;line-height:1.15;min-height:56px}
+  #dock .grp h4{font-size:13px}
+  .rd span{font-size:13px}.rd small{font-size:13px}.rdt{font-size:14px}.rdl,.rdr{font-size:13px}
+  #bgStrip{font-size:16px;line-height:1.3}
+  #bgStrip button{min-height:48px;padding:2px 8px;font-size:16px}
+  #bgStrip .bgs-leave{font-size:14px}
+  #pausedtag{font-size:12px}
+}
+
+@media (max-width:599px){
+  /* Jax 8 + the card agent's note: the pager pill is pinned to the viewport (fixed, so the learned card's scroll room in the body padding can no longer stop it pinning);
+     it keeps its old place in the flow as 56 px of padding under the panels, so the end of the page never sits under it. The card docks above the pill (--lc-b), the pill sits above the bar. */
+  body:not(.bg-on) #stripDots{position:fixed;left:50%;bottom:calc(var(--barh,72px) + 6px);margin:0;transform:translateX(-50%);z-index:6}
+  body:not(.bg-on) .sidewrap{padding-bottom:56px}
+  /* a shorter stage in free play so the bubble and its buttons sit above the pill's row at the top of the page (the sound-chip rule above still wins while the chip shows) */
+  body:not(.bg-on) #tent{height:min(calc(100vw - 20px),36vh);height:min(calc(100vw - 20px),36svh);min-height:210px}
+  html{scroll-padding-bottom:calc(var(--barh,72px) + 72px)}
+}
+/* very short phones (360x640 and the like): no room for a bubble, its buttons and a pinned pill, so the pill leaves the pinned band and sits in the flow just under the stage, where it can never cover a button */
+@media (max-width:599px) and (max-height:700px){
+  body:not(.bg-on) .sidewrap{display:flex;flex-direction:column;padding-bottom:0}
+  body:not(.bg-on) #stripDots{position:relative;left:auto;bottom:auto;transform:none;order:-1;margin:2px auto 8px} /* relative, not static: the one-time swipe hint is positioned against the pill */
+}
+</style>
+<style id="a11yCss">
+/* Accessibility pass 2 (pairs with a11y.js): green focus ring, 44px targets on touch, a calmer title-card backdrop, tent fan still under reduced motion, captions strip.
+   Measured with puppeteer + axe-core at 375x812 touch, 1024x768 touch and 1280x800 mouse. Dark look unchanged. */
+.brand{margin:0} /* the header brand is the page's one h1 */
+
+/* focus ring: --green, on a dark halo so it also reads on the cream speech bubble and on green buttons */
+:is(a,button,input,select,textarea,summary,[tabindex],[role=button]):focus-visible,.stv .stv-opt:focus-visible,.stv .stv-skip:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+#bubble :focus-visible,#bubble:focus-visible{outline-color:var(--brown)}
+.opts:has(input:focus-visible){outline:2px solid var(--green);outline-offset:2px;border-radius:8px}
+
+/* toggles: the "off" state is shown by colour and a strike-through (text stays 4.5:1), never by fading the label */
+#voiceBtn[aria-pressed=false],#capBtn[aria-pressed=false]{color:var(--muted);text-decoration:line-through}
+
+/* touch targets: 44x44 wherever the pointer is a finger. Phones already get 48 from the <900px rules; this covers the guided lesson's strip,
+   the title card's skip link, store pills in Axel's bubble and the live tag, and tablets on the desktop grid. */
+@media (max-width:899px),(pointer:coarse),(any-pointer:coarse){
+  #bgTitle .bgt-skip,.bgt-st,#bubble .bfoot a.store,#bgStrip button,#bubble button.next,.opts,.stv-skip,.stv-opt{min-height:44px}
+  #bgStrip button{padding:2px 10px}
+  #bgStrip .bgs-mute{min-width:44px}
+  #speed button,#mute,#voiceBtn,#capBtn{min-width:44px;min-height:44px}
+  .livetag::before{content:"";position:absolute;inset:-14px -10px}
+}
+
+/* contrast: the guided-lesson card sits on a photo; the old tail of the gradient (60% alpha) let bright water through the grey sub-line (2.4:1 worst case) */
+#bgTitle .bgt-big{background:linear-gradient(135deg,#1c2d17f5 0%,#15241af0 60%,#15241ae0 100%),url(art/tank_corner/mid.webp) center/cover no-repeat}
+#bgTitle .bgt-big span:last-child{color:#d3dcd3}
+
+/* captions (a11y.js): one live region, drawn as a strip under the header only while it fits */
+#captions{position:fixed;left:50%;top:64px;z-index:57;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0;pointer-events:none}
+#captions.cap-show{width:max-content;height:auto;max-width:min(92vw,520px);overflow:visible;clip-path:none;white-space:normal;transform:translateX(-50%);padding:8px 14px;background:rgba(8,8,8,.92);color:var(--text);border:2px solid var(--green);border-radius:14px;box-shadow:0 6px 18px #0008;font:600 15px/1.35 var(--display);text-align:center}
+#captions b{color:var(--green);font-weight:800}
+@media (max-width:899px){#captions.cap-show{font-size:14px;padding:6px 12px}}
+
+/* reduced motion: the fan blades are turned by script (art.js) with a transform attribute the global rule cannot reach */
+@media (prefers-reduced-motion:reduce){
+  #tent svg g.blades{transform:none!important}
+  /* `*` does not reach pseudo-elements: the sun dot under the day label (left 1 s), the dock ripple, and any other ::before / ::after motion. The action bar's scroll-driven fade hint is a state indicator, not motion, and stays. */
+  *::before,*:not(#actionbar)::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto!important}
+}
+</style>
+<style id="devFixCss">
+/* Dev layout faults (PLAYTEST-DEV-v34 frictions 3, 5 and 8). Builds on phoneFixCss / tabletCss; CSS only, no markup changes. */
+
+/* 1 (friction 3): the weather chip (ui.js setWx: #wx, toggled with [hidden] + .on) keeps a fixed slot in the header at 600 px and up, so the speed row (and everything else
+   in the header) never moves when "Cold night" / "Heatwave" appears or goes. Hidden = invisible but still laid out; the fixed width equals the old chip width. */
+@media (min-width:600px){
+  #wx{box-sizing:border-box;flex:0 0 112px;width:112px;justify-content:center;white-space:nowrap}
+  #wx[hidden]{display:inline-flex!important;visibility:hidden}
+}
+
+/* 3 (friction 8): the Weekly challenge pill (challenge.js #chalPill: fixed, top 118 px, z 30) sat on the Health bar and stayed up over modals (campaign art).
+   It now lives in its own opaque band at the very top of the screen (the band exists only while the pill does), the app is pushed down by the band's height,
+   sticky headers stick below it, and neither the pill nor the band shows over a modal. The title screen's Daily / Weekly pills are already in flow (measured, no change). */
+body:has(#chalPill:not([hidden])){--chalh:calc(26px + env(safe-area-inset-top,0px))}
+body:has(#chalPill:not([hidden]))::before{content:"";position:fixed;top:0;left:0;right:0;height:var(--chalh);background:var(--ink);z-index:29;pointer-events:none}
+body:has(#chalPill:not([hidden])) #app{margin-top:var(--chalh)}
+#chalPill{top:calc(env(safe-area-inset-top,0px) + 3px)!important}
+body:has(.modal.show) #chalPill,body:has(.modal.show)::before{display:none!important}
+body:has(.modal.show) #dlyPop{display:none!important}
+@media (max-width:599px){header{top:var(--chalh,0px)}}
+@media (min-width:600px) and (max-width:1199px) and (min-height:560px){
+  body.bg-on header{top:var(--chalh,0px)}
+}
+
+/* 2 (friction 5): desktop 1200+ in the game. The header (speed, clock, health) is pinned to the top and the dock to the bottom, exactly like the tablet rule for 900 to 1199,
+   and the stage is capped so that header, tent, Axel, readings and dock share one 1280x800 screen with no scrolling (Axel's bubble can no longer be clipped by an auto-scroll). */
+@media (min-width:1200px) and (min-height:640px){
+  html{scroll-padding-top:200px;scroll-padding-bottom:130px}
+  #app{padding-bottom:0} /* the pinned dock is the last thing on the page: no spare 24 px below it, so a 1280x800 free grow does not scroll at all */
+  header{position:sticky;top:var(--chalh,0px);z-index:2;background:var(--panel);box-shadow:0 -12px 0 var(--ink),0 6px 10px -6px #000c}
+  body.sheet-open header{z-index:auto}
+  main{grid-template-columns:minmax(0,min(52%,calc((100vh - var(--chalh,0px) - 332px) * .78 + 16px))) minmax(0,1fr);align-items:start}
+  #tent{max-height:calc(100vh - var(--chalh,0px) - 310px)}
+  #tent svg{max-height:calc(100vh - var(--chalh,0px) - 332px);margin:0 auto}
+  /* fixed furniture that used to float over the (then off-screen) dock rises above the pinned one */
+  #toast{bottom:120px}
+  body:has(#learnCard.in) #toast{bottom:232px}
+  #learnCard{bottom:120px}
+  #a2hs{bottom:124px}
+}
+
+/* 4 (friction 8): Grower's card (growers.js #growersCard > .card.gcard). Phones: the card is the scroller, the title row with the close x is pinned to its top, the footer Close to its bottom.
+   600 px and up: centred, 720 px wide, same pinned title row; the footer Close is pinned too, so growers.js focusing #growersClose on open no longer scrolls the card to the bottom. */
+#growersCard .card{overscroll-behavior:contain}
+#growersCard .gtop{position:sticky;top:-18px;z-index:3;background:var(--panel);margin:-18px -20px 0;padding:14px 20px 8px;border-bottom:2px solid var(--line)}
+@media (min-width:600px){
+  .modal#growersCard .card{max-width:720px;margin-left:auto;margin-right:auto}
+  #growersCard .card>.foot{position:sticky;bottom:-18px;z-index:3;margin:14px -20px -18px;padding:10px 20px;background:var(--panel);border-top:2px solid var(--line)}
+}
+@media (max-width:599px){
+  #growersCard .card{max-height:100%;overflow-y:auto;overflow-x:hidden}
+  #growersCard .gtop{top:calc(-1 * max(14px,env(safe-area-inset-top,0px)));margin:calc(-1 * max(14px,env(safe-area-inset-top,0px))) -14px 0;padding:max(14px,env(safe-area-inset-top,0px)) 14px 8px}
+}
+</style>
+<style id="v36Css">
+/* v36 design pass (Trev's play of v35: "very long on the dialog side to start up, not enough player interaction, buttons hidden in menus").
+   Title: one primary tile + Continue + a closed "More ways to play". Setup: WHERE / HOW / WHAT rows on one screen. Bar: every action one tap. */
+
+/* ---- title ---- */
+#titleBubble{background:#f6f3ea;color:var(--brown);border:3px solid var(--brown);border-radius:16px;padding:10px 14px;font:600 15px/1.35 var(--display);min-height:44px;margin:0 0 10px;position:relative}
+#titleBubble:empty{display:none}
+.mode.primary{width:100%;min-height:64px;border:3px solid var(--green);background:linear-gradient(135deg,#1c2d17,#15241a);margin:0 0 8px}
+.mode.primary b{font-size:24px}
+.mode.primary span{color:#d3dcd3}
+details.more{margin:6px 0 0}
+details.more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);font:800 14px var(--display);color:var(--text)}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary:after{content:"\25BE";margin-left:auto;color:var(--muted);transition:transform .2s}
+details.more[open]>summary:after{transform:rotate(180deg)}
+details.more>.today,details.more>.modes{margin-top:8px}
+@media (max-width:899px){
+  .mode.primary,details.more,#titleBubble{grid-column:1/-1}
+  .tbody .kicker,.tbody .ttl,.tbody p{grid-row:auto}
+}
+#bgOver{margin:0 0 8px}
+
+/* ---- setup: three rows on one screen ---- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+.tile{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:8px 10px;min-height:56px;text-align:left;display:flex;flex-direction:column;gap:2px;position:relative;color:var(--text);font:inherit;cursor:pointer}
+.tile b{font:700 15px var(--display)}
+.tile span.bl{font-size:12px;line-height:1.25;color:var(--muted)}
+.tile .ti{display:block;height:44px;margin-bottom:2px;overflow:hidden;border-radius:8px}
+.tile .ti img{display:block;width:100%;height:44px;object-fit:cover}
+.tile .ti svg{height:44px;width:auto}
+.tile.sel{border-color:var(--green);background:#16261a;box-shadow:0 0 0 3px #6ec84633}
+.tile:hover,.tile:focus-visible{border-color:var(--green)}
+.tile[hidden]{display:none}
+#setupBody h3:first-child{margin-top:6px}
+#setupBody .cropgrid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+#setupBody .cropgrid .gear{min-height:56px;padding:6px 8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap}
+#setupBody .cropgrid .gear .cic{height:34px;margin:0}#setupBody .cropgrid .gear .cic svg{height:34px;width:30px}
+#setupBody .cropgrid .gear>span.meta,#setupBody .cropgrid .gear>span:last-of-type:not(.cic){display:none}
+#setupBody .cropgrid .gear>i{margin:0;font-size:10px}
+#adjust{margin-top:14px}
+#adjust>summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;padding:8px 12px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);font:800 14px var(--display)}
+#adjust>summary::-webkit-details-marker{display:none}
+#adjust>summary:after{content:"\25BE";margin-left:auto;color:var(--muted)}
+#adjust[open]>summary:after{content:"\25B4"}
+#adjust .gear{min-height:48px}
+@media (max-width:599px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tiles.three .tile{padding:6px 7px}
+  .tiles.three .tile .bl{font-size:11px}
+  #setupBody .cropgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* ---- readings: the pinned pair on page 1 (phones) and the tower slot strip ---- */
+#pins{display:none}
+#slotStrip{display:none}
+#slotStrip.on{display:grid;grid-template-columns:repeat(auto-fit,minmax(40px,1fr));gap:4px;margin-top:6px}
+#slotStrip button{min-height:44px;min-width:0;padding:2px;border-radius:10px;background:var(--panel2);border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:800 10px var(--body);color:var(--text)}
+#slotStrip button i{display:block;width:70%;height:4px;border-radius:3px;background:#0b0e0b;overflow:hidden;font-style:normal}
+#slotStrip button i u{display:block;height:100%;background:var(--green);text-decoration:none}
+#slotStrip button.sel{border-color:var(--orange);box-shadow:0 0 0 3px #ec802455}
+#slotStrip button.ripe{border-color:var(--green)}
+#slotStrip button.empty{opacity:.7;border-style:dashed}
+#slotStrip button.bad{border-color:var(--red)}
+@media (max-width:599px){
+  #pins.on{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:2px 0 8px}
+  #pins .rd{min-height:44px;padding:4px 9px;cursor:default}
+  #pins .rd:after{display:none}
+  body.bg-on #pins.on{margin-top:8px}
+  #quinn{flex-wrap:wrap}
+  #pins,#slotStrip.on{flex:1 0 100%}
+}
+#tent .slot.sel>path{stroke:var(--orange);stroke-width:4}
+#tent .slot{cursor:pointer}
+.rd.moisture,.rd.rain,.rd.wind,.rd.shade{}
+
+#tent[data-where=veranda] svg .tentgear,#tent[data-where=outdoors] svg .tentgear,#tent[data-where=veranda] svg .cone,#tent[data-where=outdoors] svg .cone{display:none}
+body.bg-on #pins{display:none!important}
+/* ---- the strip's Skip ---- */
+#bgStrip .bgs-skip{text-decoration:underline;font-size:11px;white-space:nowrap}
+</style>
+<style id="v36bCss">
+@media (min-width:900px){body.bg-on #bgStrip{position:sticky;top:var(--hdrh,0px);z-index:2}} /* v36b: on a desktop the strip sat 24 px under the sticky header; sticky at the header's measured height keeps it clear */
+/* v36b (docs/PLAYTEST-SAM-v36.md). Sticky chrome stays small and stacked: header, lesson strip, trouble chips; the bubble, toast and pager stay clear of it and of the bar. */
+#trouble{display:none}
+#stripDots[hidden]{display:none!important}
+#toast[data-pos=top]{bottom:auto;top:calc(var(--hdrb,120px) + 6px)}
+#dock button.is-on{box-shadow:inset 0 -3px 0 var(--green)}
+#dock button.is-on span{text-decoration:underline;text-decoration-color:var(--green);text-underline-offset:2px}
+@media (max-width:899px){
+  #trouble:not([hidden]){display:flex;align-items:center;flex-wrap:wrap;gap:6px;scrollbar-width:none;padding:4px 2px;margin-top:6px;min-height:44px;box-sizing:border-box;background:var(--ink)} /* v36d: chips wrap (a fourth chip used to sit off the right edge with no cue) */
+  #trouble::-webkit-scrollbar{display:none}
+  #trouble .tc{flex:none;min-height:44px;padding:0 12px;border-radius:999px;background:var(--panel);border:2px solid var(--line);font:800 13px/1 var(--display);color:var(--text);white-space:nowrap}
+  #trouble .tc.bad{border-color:#e2453a;color:#ffb8b0}
+  #trouble .tc.warn{border-color:var(--orange);color:#ffd9a8}
+  #trouble .tc i{font-style:normal;font-size:11px;opacity:.8}
+  #trouble .tc:not(.more){display:inline-flex;align-items:center;gap:5px}#trouble .tc .tl{min-width:0}#trouble .tc .tn,#trouble .tc i{flex:none} /* v45: the label and the number never touch on a tablet either */
+  #quinn{scroll-margin-top:calc(var(--hdrb,140px) + 8px)}
+  body.bg-on #quinn{padding-bottom:calc(var(--pillh,48px) + 8px)} /* the pager pill never clips Axel's feet */
+  body:not(.bg-on) #quinn{padding-bottom:calc(var(--pillh,48px) + 4px)}
+  body.pager-hidden #quinn,body.pager-hidden.bg-on #quinn{padding-bottom:6px}
+  body.pager-hidden:not(.bg-on) .sidewrap{padding-bottom:0}
+  #slotStrip.on{grid-template-columns:repeat(auto-fit,minmax(44px,1fr))}
+}
+@media (max-width:599px){
+  /* header, lesson strip and trouble chips are stacked sticky bars; the strip's Skip is always on screen */
+  #trouble:not([hidden]){position:sticky;top:calc(var(--hdrh,0px) + var(--striph,0px));z-index:2;margin-top:0;box-shadow:0 8px 10px -6px #000c}
+  body.spotting #pausedtag{position:fixed;top:calc(var(--hdrb,120px) - 8px);right:16px;z-index:48} /* v36d: while the bubble floats under the chrome the pill sits on its corner, not over the day clock */
+  body.bg-on #bgStrip{position:sticky;top:var(--hdrh,0px);z-index:2;flex-wrap:nowrap;gap:6px;margin-top:0;padding:4px 8px 9px 10px;border-radius:0 0 12px 12px;box-shadow:0 8px 10px -6px #000c}
+  body.bg-on #bgStrip .bgs-txt{flex:1 1 0;min-width:0;font-size:13px;line-height:1.2;display:block;overflow:visible;overflow-wrap:anywhere}/* v45: the lesson line wraps in full (was cut at two lines with an ellipsis) */
+  body.bg-on #bgStrip .bgs-mute{display:none}
+  body.bg-on #bgStrip button{min-height:44px;font-size:12px}
+  body.bg-on #bgStrip .bgs-skip{flex:0 0 auto;min-width:48px;padding:2px 8px;font-size:13px}
+  body.bg-on #bgStrip .bgs-leave{flex:0 0 104px;padding:2px 6px;font-size:11px;line-height:1.15;white-space:normal;text-align:center;text-decoration:none;border:1px solid var(--line);border-radius:10px}
+  #bgStrip .bgs-conf:not([hidden]){display:flex;align-items:center;gap:6px;flex:1 1 100%;min-width:0}
+  #bgStrip .bgs-conf span{flex:1 1 0;min-width:0;font-weight:800;font-size:12px;line-height:1.2;color:var(--text)}
+  #bgStrip .bgs-conf button{flex:none;min-width:48px;border:2px solid var(--line);border-radius:10px;color:var(--text);padding:2px 10px}
+  #bgStrip .bgs-conf .bgs-yes{background:var(--green);color:var(--ink);border-color:var(--brown);font-weight:900}
+  #bgStrip.confirming>:not(.bgs-conf):not(.bgs-bar){display:none!important}
+  #slotStrip.on{grid-template-columns:repeat(4,minmax(44px,1fr))}
+}
+</style>
+<style id="v37Css">
+/* v37 goal line: the lesson strip's slot (#bgStrip.gs) after the lesson. One tap opens a sheet that overlays, so nothing shifts or scrolls. */
+#bgStrip.gs{display:block;position:sticky;top:var(--chalh,0px);z-index:3;margin-top:8px;padding:0 0 6px;background:var(--panel);border:2px solid var(--green);border-radius:12px;font-size:13px;line-height:1.25;box-shadow:0 -6px 0 var(--ink),0 6px 10px -6px #000c}
+#bgStrip.gs[data-tag=done]{border-color:var(--line)}
+#bgStrip.gs .gs-main{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:4px 12px 6px;background:none;border:0;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+#bgStrip.gs .gs-t{flex:1 1 0;min-width:0;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bgStrip.gs .gs-t b{color:var(--green)}
+#bgStrip.gs .gs-p{flex:none;color:var(--yellow);font-weight:800;font-size:12px;white-space:nowrap}
+#bgStrip.gs .gs-main:after{content:"\25BE";flex:none;color:var(--muted);font-size:12px}
+#bgStrip.gs .gs-main[aria-expanded=true]:after{content:"\25B4"}
+#bgStrip.gs .gs-sheet{position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:60vh;overflow:auto;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:0 10px 24px #000c;z-index:4}
+#bgStrip.gs .gs-sheet[hidden]{display:none}
+#bgStrip.gs .gs-sheet ol{list-style:none;margin:0 0 6px;padding:0}
+#bgStrip.gs .gs-sheet li{display:flex;gap:8px;align-items:flex-start;min-height:44px;padding:6px 0;border-bottom:1px solid var(--line)}
+#bgStrip.gs .gs-sheet li small{display:block;color:var(--muted);font-weight:600;margin-top:2px}
+#bgStrip.gs .gs-sheet li.dn{color:var(--muted)}#bgStrip.gs .gs-sheet li.dn .gs-k{color:var(--green)}
+#bgStrip.gs .gs-sheet li.cur .gs-k{color:var(--orange)}#bgStrip.gs .gs-sheet li.nx{opacity:.75}
+#bgStrip.gs .gs-k{flex:none;width:18px;text-align:center}
+#bgStrip.gs .gs-sheet .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#bgStrip.gs .gs-close{min-height:44px;min-width:88px;padding:0 14px;background:var(--panel2);border:2px solid var(--line);border-radius:10px;color:var(--text);font-weight:800}
+@media (max-width:599px){#bgStrip.gs{top:calc(var(--hdrh,0px) + var(--chalh,0px));margin-top:0;border-radius:0 0 12px 12px}#bgStrip.gs .gs-t{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}}
+@media (min-width:1200px) and (min-height:640px){#bgStrip.gs{top:calc(var(--hdrh,0px) + var(--chalh,0px));margin-top:0;border-radius:0 0 12px 12px}}
+@media (min-width:600px){#bgStrip.gs{max-width:720px;margin-left:auto;margin-right:auto;width:100%;box-sizing:border-box}}
+</style>
+<style id="v41Css">
+/* v41 phone UX pass (B4, B5, M10, M11, M14, m1). Last stylesheet in the page so it wins ties.
+   Z-ORDER (one list, tests/pass11 pins it): modal 80 > More sheet 70 (its backdrop 69) > learned card 60 > bubble spotlight 47 > spot shades 40-46; the toast stays on top (90) so "Copied" is still seen inside a modal. */
+:root{--z-modal:80;--z-sheet:70;--z-sheetback:69;--z-learn:60;--z-toast:90;--z-bubble:47}
+.modal{z-index:var(--z-modal)}#bgDone{z-index:81}
+#learnCard{z-index:var(--z-learn)}
+#toast{z-index:var(--z-toast)}
+@media (max-width:899px){
+  body.sheet-open #sheetBack{z-index:var(--z-sheetback)}
+  #actionbar.open{z-index:var(--z-sheet)}
+}
+/* Axel's floating (spotlit) bubble never sits over an open modal or the More sheet; it is back as soon as they close */
+body.spotting.sheet-open #bubble,body.spotting:has(.modal.show) #bubble{visibility:hidden}
+/* dock labels break between words, never inside one */
+#dock button span,#dockOverflow button span{overflow-wrap:normal;word-break:normal;hyphens:none;max-width:100%} /* v65 (critic round 14 minor 1): a centred flex item takes its text's width, so "Shade: On" ran 4 px past a 360 px phone's button and read "Shade: Or"; capped, it wraps at the space */
+.verline{margin:10px 0 0;font-size:11px;line-height:1.3;color:#a9b4a9;text-align:center;pointer-events:none}
+@media (pointer:coarse),(max-width:899px){
+  #bgStrip button,#bgStrip .bgs-skip,#bgStrip .bgs-leave,#bgOver,#bubble button.next,.card .foot button,.ghost{min-height:44px}
+  #bgStrip .bgs-skip{min-width:44px}
+}
+#bgOver,.card .close,.card .foot .ghost,#titleBack,.stv-skip{min-height:44px;min-width:44px}
+/* PHONE PORTRAIT: header is ONE compact row (day and stage, health bar inline, speed buttons 40 px); the brand stays in the page for screen readers */
+@media (max-width:599px){
+  header{flex-wrap:wrap;gap:4px 8px;padding:4px 6px;border-radius:12px;align-items:center}
+  header:before{display:none}
+  .brand{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;margin:0}
+  .s-day{order:1;flex:1 1 0;min-width:0;align-items:flex-start;text-align:left}
+  .s-day b{font-size:13px;white-space:nowrap}
+  .s-day #stage{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .s-day .bar{display:none}
+  .s-health{order:2;flex:0 0 auto;min-width:0;font-size:0}
+  .s-health .bar{width:52px;margin:0}
+  #speed{order:3;flex:0 0 auto}
+  #speedbtns{gap:3px}
+  header #speed button{min-width:40px;min-height:40px;width:40px;padding:0;font-size:13px}
+  /* chips: ONE row. ui.js shows the worst two and a "+N" chip */
+  #trouble:not([hidden]){flex-wrap:nowrap;overflow:hidden;margin-top:4px;padding:2px}
+  #trouble .tc{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;padding:0 10px}
+  #trouble .tc.more{flex:none;min-width:44px;padding:0 12px}
+  #trouble .tc:not(.more){display:inline-flex;align-items:center;gap:5px;overflow:hidden}#trouble .tc .tl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#trouble .tc .tn,#trouble .tc i{flex:none}
+  /* dock: two rows of 44 px, 11 px labels */
+  #dock button,#moreBtn{font-size:11px}
+  body:not(.bg-on) #tent{min-height:200px}
+}
+@media (max-width:599px) and (max-height:700px){ /* short phones: a smaller stage so header + strip + chips + stage + Axel's Got it fit without the page jumping on the first line */
+  body.bg-on #tent{height:min(calc(100vw - 20px),25svh);min-height:150px}
+  body:not(.bg-on) #tent{height:min(calc(100vw - 20px),30svh);min-height:170px}
+}
+@media (min-width:430px) and (max-width:599px){.brand{position:static;width:auto;height:auto;clip:auto;overflow:visible;font-size:12px;order:0;flex:0 0 auto}}
+@media (min-width:900px){header{min-width:0}#speed{flex-wrap:wrap;justify-content:flex-end;gap:4px;min-width:0;max-width:100%}} /* v41 1920 header toolbar wraps instead of running past its panel */
+/* LANDSCAPE PHONE (812x375): the dock is one row of up to 8 cells (More is one), labels whole, the page scrolls and the scene is not cropped */
+@media (max-width:899px) and (orientation:landscape) and (max-height:520px){
+  :root{--barh:56px}
+  header{flex-wrap:nowrap;gap:8px;padding:3px 8px;align-items:center;height:auto;min-height:0;overflow:visible}
+  header:before{display:none}
+  .brand{font-size:13px;flex:0 0 auto}
+  .s-day{flex-direction:row;align-items:baseline;gap:8px;min-width:0}.s-day .bar{display:none}
+  .s-health{flex-direction:row;align-items:center;gap:6px;min-width:0;font-size:12px}.s-health .bar{width:70px;margin:0}
+  header #speed button{min-width:40px;min-height:40px;padding:0 4px}
+  /* only header + dock are stuck to the screen; the lesson strip and the chips scroll with the page so the chrome stays under 40 % */
+  body.bg-on #bgStrip,#trouble:not([hidden]){position:static}
+  #actionbar{grid-auto-rows:minmax(44px,auto)}
+  #dock button,#moreBtn{flex-direction:column;font-size:11px;line-height:1.1;padding:2px 2px;gap:0;min-height:44px}
+  #dock button svg{width:20px;height:20px}
+  #tent{max-height:none}
+  #tent svg{max-height:calc(100vh - 120px);max-height:calc(100svh - 120px)}
+  #trouble:not([hidden]){flex-wrap:nowrap;overflow:hidden;margin-top:4px}
+  #trouble .tc{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  #trouble .tc.more{flex:none}
+  .verline{display:none}
+}
+</style>
+<style id="pass12Css">
+/* v37 pass 12 (UI polish): reading tiles are a disclosure, text floor, title speaker, end card, volume, credits */
+.rd .rdb{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;background:transparent;border:0;border-radius:inherit;cursor:pointer;z-index:1;color:inherit}
+.rd .rdb:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.rd .rdx{position:relative;z-index:2;grid-column:1/-1;cursor:default}.rd .rdx[hidden]{display:none}
+.rd.open .rdx{display:block;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+.tmute{position:absolute;top:10px;right:10px;z-index:5;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border-radius:50%;font-size:20px;line-height:1;display:grid;place-items:center;background:var(--panel);border:2px solid var(--line);color:var(--text);cursor:pointer}
+.tmute:hover,.tmute:focus-visible{border-color:var(--green)}
+.creditsrow{margin:6px 0 0;text-align:center}.verline,.creditsrow{width:100%} /* v49b: full-width rows in the desktop flex title, so centred means centred (critic round 4) */.creditsrow .ghost{min-height:44px;min-width:88px}
+.verline{pointer-events:auto}
+.bgd-stats{display:flex;gap:12px;justify-content:center;margin:10px 0}.bgd-stats div{flex:1 1 0;max-width:160px;background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:8px 10px}
+.bgd-stats b{display:block;font-family:var(--display);font-size:22px}.bgd-stats span{font-size:13px;color:var(--muted)}
+.bgd .bgd-keep{color:var(--text);font-weight:800;margin:6px 0}
+.bgd .foot{flex-wrap:wrap}.bgd .foot .big{flex:1 1 100%;min-height:48px}.bgd .foot .ghost{min-height:44px}
+.volrow{display:flex;align-items:center;gap:10px;flex:1 1 100%;min-height:44px;font-weight:800}.volrow input{flex:1;min-height:44px;accent-color:var(--green)}
+#mmVol .volrow{margin-top:6px}
+.creditscard{max-width:560px;max-height:86vh;overflow:auto}.creditscard .creditsbody h3{margin:14px 0 4px;font-family:var(--display)}.creditscard .creditsbody ul{padding-left:18px;margin:4px 0}.creditscard .creditsbody li{margin:6px 0;line-height:1.4}
+.creditscard .verline{display:block;margin:0 0 8px;text-align:left}
+#creditsModal{z-index:90}
+/* M12: nothing the player reads in play is under 13 px; on phones the dense chrome (tile names and targets, strip, dock labels, header stats) may be 12 */
+.fx-stage small,.grp h4,.gear i,.gear .mini,.gear span,.tentline,.stepind,.rangeends,.scores span,.opts,.kicker,.tbody .kicker,.badge span,.cta.share small,.cropgrid .gear .meta,.cropgrid .gear>span:last-of-type,.livetag,.mode span,#almanac .bhd span,#swipeHint,.bgt-h,.tile span.bl,.tiles.three .tile .bl,#setupBody .cropgrid .gear>i,.verline,#wx,.rdt,.rdw,#almanac .ae .rg,#growersCard .gnote,#shopModal .shopRow span,#shopModal .shopFine,.dly-t i,.ll-tile span,.ll-f small,.ll-hl,.ll-pv div,.csvi-prev,.stv-bg .stv-bglabel,.fx-stage small{font-size:13px!important}
+.rd span,.rd b em,.rd small,.rdl,.rdr,.rdw strong,html body #readings .rd .rdstate,#trouble .tc i,#dock button,#moreBtn,#dock button span,#bgStrip button,#bgStrip .bgs-skip,#bgStrip .bgs-leave,#bgStrip .bgs-conf span,#bgStrip.gs .gs-p,#bgStrip.gs .gs-main:after,.stat,.s-health,.s-day #stage,#pausedtag,.brand{font-size:13px!important}
+@media (max-width:430px){.rd span,.rd b em,.rd small,.rdl,.rdr,.rdw strong,html body #readings .rd .rdstate,#trouble .tc i,#dock button,#moreBtn,#dock button span,#bgStrip button,#bgStrip .bgs-skip,#bgStrip .bgs-leave,#bgStrip .bgs-conf span,#bgStrip.gs .gs-p,.stat,.s-health,.s-day #stage,#pausedtag,.brand{font-size:12px!important}}
+/* v37 [M13][M11][m7] pass13: use the width on desktop and tablets, compact the landscape phone chrome, skip link, 400 % zoom dock words */
+.skiplink{position:absolute;left:8px;top:-60px;z-index:200;background:var(--green);color:var(--ink);padding:10px 14px;border-radius:10px;font-weight:800;text-decoration:none;min-height:44px;box-sizing:border-box}
+.skiplink:focus{top:8px}
+#actionbar:focus{outline:none}
+@media (min-width:1200px){
+  #app{max-width:min(1680px,calc(100vw - 48px))}
+  #speed button,#mute{padding:4px 9px;font-size:14px;min-height:40px}
+  #speed{flex:1 1 100%;justify-content:flex-end}
+  main{gap:20px}
+}
+@media (min-width:1700px){#speed{flex:1 1 auto}}
+@media (min-width:1200px) and (min-height:640px){
+  main{grid-template-columns:minmax(0,min(48%,calc((100vh - var(--chalh,0px) - 374px) * .78 + 16px))) minmax(0,1fr)}
+  #readings{grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
+  #tent{max-height:calc(100vh - var(--chalh,0px) - 352px)}
+  #tent svg{max-height:calc(100vh - var(--chalh,0px) - 374px)}
+}
+@media (min-width:600px) and (max-width:1199px) and (orientation:portrait) and (min-height:900px){
+  main{grid-template-columns:minmax(0,54%) minmax(0,1fr)}
+  #tent{max-height:calc(100svh - 300px)}
+  #tent svg{max-height:calc(100svh - 322px)}
+}
+@media (min-width:900px){#slotStrip.on{position:static;display:grid;grid-template-columns:repeat(8,minmax(44px,1fr));grid-auto-flow:row;width:100%;margin-top:6px}#quinn #bubble.show{flex:1 1 360px;max-width:none}} /* v37 [M13] tower slots in one row, so Axel's panel is not 600 px tall */
+@media (max-width:340px){#dock button span,#moreBtn span{overflow-wrap:break-word;hyphens:auto;max-width:100%}}
+@media (max-width:899px) and (orientation:landscape) and (max-height:520px){
+  body.bg-on #bgStrip,body.bg-on #bgStrip.gs{min-height:0;padding-block:2px;margin-top:4px}
+  body.bg-on #bgStrip .gs-main,body.bg-on #bgStrip button{min-height:40px}
+  #trouble:not([hidden]){margin-top:2px}
+  #trouble .tc{min-height:40px}
+}
+</style>
+<style id="v46Css">
+/* v46 layout pass [M13 M11 B4 m2] */
+/* [m2] a toast rides above the real dock height, never behind it; while a modal or the More sheet is open it moves to the top edge (clear of the Got it row and the shop list, narrow enough to leave the close button free) */
+@media (max-width:899px){#toast{bottom:calc(var(--dock-h,var(--barh,16px)) + 12px)}}
+body.sheet-open #toast{bottom:auto;top:max(6px,env(safe-area-inset-top,0px));max-width:min(calc(100vw - 128px),380px)}
+body:has(.modal.show) #toast{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);max-width:min(calc(100vw - 32px),380px)} /* v49 [m2]: over the quiet space above a modal's foot, never its title */
+.lost-back{background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 12px;font-weight:800;min-height:44px} /* v51: the Lost card's quiet button, styled like .ghost but not one, so Escape does nothing there (critic round 5) */
+input#autopause{width:22px;height:22px;accent-color:var(--green);margin:0 6px 0 0;vertical-align:middle} /* v51 (critic round 5) */
+@media (min-width:900px){.titlecard .tbody{flex:1 1 0;min-width:0}.tbody .verline,.tbody .creditsrow{margin-left:-218px;width:calc(100% + 218px);max-width:none}} /* v51 (critic round 5): the version line and Credits sit in .tbody beside the 200 px Axel plus 18 px gap, so centred on .tbody was 40 px right of the card's centre at 1280 and 1920; the rows now span the card */
+@media (max-width:599px){.modal.small{padding:16px;align-items:center}.modal.small .card{display:block;height:auto;max-height:90vh;width:100%;border:3px solid var(--line);border-radius:20px;padding:18px 20px}.modal.small .card .foot{position:static;margin:12px 0 0;padding:12px 0 0;border:0;background:none}} /* v51: a short question (Replace this grow?) is a small centred card on a phone, not a full sheet (critic round 5) */
+@media (min-width:900px) and (max-height:900px){#dock{position:fixed;left:0;right:0;bottom:0;z-index:4;margin:0;padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:2px solid var(--line);box-sizing:border-box}body{padding-bottom:var(--dockfix,102px)}#toast{bottom:calc(var(--dockfix,102px) + 12px)}#learnCard{bottom:calc(var(--dockfix,102px) + 8px)}#a2hs{bottom:calc(var(--dockfix,102px) + 12px)}} /* v51 (critic round 5 #6): at 1280x800 the first play screen put the dock 7 to 38 px below the fold (and a laptop with browser chrome has about 650 px): in a desktop window under 900 px tall the dock is pinned to the bottom edge, ui.js syncBar sets --dockfix to its height, and the toast, lesson card and install chip ride above it */
+/* rc1 [N33]: at 1024x700 the fixed dock wrapped its 13 buttons onto two rows (196 px tall: 12 px gaps and 72 px minimum widths need over 1100 px); from 900 to 1279 px wide the groups share one row, the buttons may shrink and the gaps tighten */
+@media (min-width:900px) and (max-width:1279px) and (max-height:900px){#dock{flex-wrap:nowrap;gap:8px}#dock .grp{flex:1 1 auto;min-width:0}#dock .btns{flex-wrap:nowrap;gap:4px}#dock .btns button{flex:1 1 0;min-width:0;padding-left:2px;padding-right:2px}#dock button span{white-space:normal;overflow-wrap:normal;text-align:center}}
+/* rc1 [N33]: on a phone or tablet the install chip rides just above the action bar, which is where a tower's slot strip scrolls to (measured at 375x812: chip 607-663 px, strip 635-679 px, all 4 slot buttons covered); while the strip is up the chip moves under the sticky header instead */
+@media (max-width:899px){body:has(#slotStrip.on) #a2hs{bottom:auto;top:calc(var(--hdrb,120px) + 8px)}}
+body:has(#title.show) #a2hs,body:has(#campaign.show) #a2hs{bottom:auto;top:12px} /* v55 (round 8 #2): on the title and the chapter menu the install chip sits over the banner art, clear of the heading and the Credits row */
+html:has(#title.show),body:has(#title.show){overflow:hidden} /* v49 [N19]: the page under the title overlay never scrolls (768 showed a 45 px scroll of the hidden HUD); the title card scrolls on its own when it must */
+@media (max-width:899px) and (orientation:landscape) and (max-height:520px){ /* v49 [N19]: a phone on its side: a short plate, Axel down the left, the buttons beside him, so Start growing is above the fold */
+  .titlecard #title-bg{height:52px;max-height:52px}
+  .titlecard #titleAxel{grid-row:2/span 6}
+  .titlecard #continue,.titlecard .today,.titlecard .modes,.titlecard .mode.primary,.titlecard details.more,.titlecard #titleBubble{grid-column:2}
+}
+/* [B4] dock labels stay on one line; a touch smaller on the narrowest phones */
+@media (max-width:599px){#dock button span,#moreBtn span,#dock button{white-space:nowrap}#dock button,#moreBtn{letter-spacing:-.15px}html[style*="--cols: 7"] #dock button,html[style*="--cols: 7"] #dock button span,html[style*="--cols: 8"] #dock button,html[style*="--cols: 8"] #dock button span,html[style*="--cols: 9"] #dock button,html[style*="--cols: 9"] #dock button span{white-space:normal}} /* a crowded dock (7+ columns, cells under 54 px) wraps two-word labels as before; the short docks keep one line */
+@media (max-width:399px){#dock button,#moreBtn{font-size:10px;letter-spacing:-.3px;padding-left:0;padding-right:0}}
+@media (max-width:399px){#dock button:is([data-act="shade"],[data-act="cover"],[data-act="drip"],[data-act="lights"],[data-act="fan"],[data-act="humidity"]) span{white-space:normal}} /* v65 (critic round 14 minor 1): with the 13 px label floor a toggle's "Shade: On" is wider than a 360 px phone's cell, so it read "Shade: Or"; a toggle label may take two lines there */
+@media (max-width:399px){#actionbar{padding-left:max(3px,env(safe-area-inset-left,0px));padding-right:max(3px,env(safe-area-inset-right,0px));column-gap:2px}} /* the 12 px label floor (pass12) stays; the bar gives the cells 4 px more instead */
+@media (max-width:370px){#dock button,#moreBtn{letter-spacing:-.4px}}
+@media (max-width:340px){#dock button,#moreBtn{letter-spacing:-.6px}}
+/* [M13] tower slots in one row from 700 px (was 900), so Axel's panel is not a tall empty column */
+@media (min-width:700px) and (max-width:899px){#quinn{flex-wrap:wrap}}
+@media (min-width:700px){#slotStrip.on{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(44px,1fr));grid-auto-flow:row;width:100%;margin-top:6px}}
+@media (min-width:700px) and (max-width:899px){#slotStrip.on{flex:1 0 100%}#quinn #bubble.show{flex:1 1 300px;max-width:none}}
+@media (min-width:700px) and (max-width:899px) and (orientation:portrait){#slotStrip.on{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:700px) and (max-width:1199px) and (orientation:portrait) and (min-height:900px){
+  main{grid-template-columns:minmax(0,58%) minmax(0,1fr)}
+  #tent{max-height:calc(100svh - var(--hdrb,150px) - 24px)}
+  #tent svg{max-height:calc(100svh - var(--hdrb,150px) - 46px)}
+  .side{display:contents}#tent{grid-column:1;grid-row:1}#quinn{grid-column:2;grid-row:1;align-self:stretch;align-items:center;align-content:center;gap:12px}#rpanel{display:block;grid-column:1/-1;grid-row:2}
+  #readings{grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
+}
+/* [M13] desktop: the stage cap also gives way to the trouble-chip row (--troubleh, set by ui.js chrome()) when it shows, so 1280x800 never scrolls by the chip height */
+@media (min-width:1200px) and (min-height:640px){
+  main{grid-template-columns:minmax(0,min(48%,calc((100vh - var(--chalh,0px) - 374px - var(--troubleh,0px)) * .78 + 16px))) minmax(0,1fr)}
+  #tent{max-height:calc(100vh - var(--chalh,0px) - 352px - var(--troubleh,0px))}
+  #tent svg{max-height:calc(100vh - var(--chalh,0px) - 374px - var(--troubleh,0px))}
+}
+@media (min-width:1200px) and (min-height:640px){body:has(#slotStrip.on) #quinn{min-height:0;padding-top:6px;padding-bottom:4px;gap:6px}body:has(#slotStrip.on) .side{gap:10px}} /* tower: the slot row sits in Axel's panel, so the panel gives back the ~25 px that made 1280x800 scroll */
+/* [M11] landscape phone: chrome slimmer, the stage takes what is left between the chrome and the one-row dock, tiles beside it */
+@media (max-width:899px) and (orientation:landscape) and (max-height:520px){
+  header{padding-block:2px}
+  body.bg-on #bgStrip,body.bg-on #bgStrip.gs{margin-top:2px;padding-block:0;min-height:0;font-size:13px;line-height:1.2}
+  body.bg-on #bgStrip button,body.bg-on #bgStrip .bgs-skip,body.bg-on #bgStrip .bgs-leave{min-height:40px;font-size:13px}
+  main{margin-top:4px;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}
+  #tent{max-height:none;min-height:150px;height:calc(100vh - var(--hdrb,130px) - var(--barh,56px) - 10px);height:calc(100svh - var(--hdrb,130px) - var(--barh,56px) - 10px)}
+  #tent svg{max-height:calc(100svh - var(--hdrb,130px) - var(--barh,56px) - 14px)}
+  #quinn{min-height:0}
+  #pausedtag{top:2px}
+}
+/* v57 (Command Centre; play-test #11 #15 and #12 #13): on a phone the board never jumps as chips and bubbles come and go.
+   The trouble chips float over the top edge of the scene instead of pushing it down. Axel's bubble has a fixed slot beside him: it is held
+   (with a quiet 'tap me' line) when no bubble is up and while the bubble floats under the header, so the panel keeps its height and the
+   page does not have to scroll the bubble clear of the dock again. A bubble longer than the slot still grows it. */
+@media (max-width:599px){
+  #trouble:not([hidden]){position:relative;top:auto;height:0;min-height:0;margin:0;padding:0 4px;overflow:visible;align-items:flex-start;background:none;box-shadow:none;z-index:2} /* v58 (play-test #13 #9): 2, over the scene (its svg is 1) and under the sticky Goal strip (3) when the page scrolls */
+  #trouble:not([hidden]) .tc{margin-top:8px;box-shadow:0 2px 10px #000c}
+  #quinn .quinn-svg{order:-1}
+  #bubble{min-height:140px;box-sizing:border-box}
+  body:not(.spotting) #quinn:has(#bubble:not(.show)):not(:has(#slotStrip:not(:empty))){min-height:150px;padding-top:10px}
+  body:not(.spotting) #quinn:has(#bubble:not(.show)),body.bg-on:not(.spotting) #quinn:has(#bubble:not(.show)){padding-bottom:calc(var(--pillh,48px) + 4px)}
+  body:not(.spotting) #quinn:has(#bubble:not(.show)) .quinn-svg{width:96px;height:125px}
+  body:not(.spotting) #quinn:has(#bubble:not(.show)) #bubble{display:block;visibility:hidden}
+  body:not(.spotting) #quinn:has(#bubble:not(.show)):after{content:'Tap me any time for a hand.';position:absolute;left:124px;right:18px;top:62px;color:var(--muted);font:600 13px/1.35 var(--body);pointer-events:none}
+  body.spotting #quinn:before{content:'';flex:1 1 0;min-height:140px}
+}
+/* v58 (critic round 9 #4, play-test #13 #1) */
+/* the one-time "Swipe for readings" hint sat to the right of the centred dots pill at a fixed 92 px and ran off a 360 px screen (and past 375 with
+   its nudge). It stays beside the pill (above it, the pill's clip-path would hide it), reads "Swipe ▸" ("for readings" is for screen readers) and is never wider than the room on the right, nudge included */
+#swipeHint{box-sizing:border-box;width:auto;max-width:calc(50vw - 50% - 18px);padding:4px 10px;white-space:nowrap}
+@media (max-width:599px){
+  /* a tower on a phone: the slot row sat under Axel's bubble, behind the fixed action bar (0 of 8 slots reachable at first paint). It now floats
+     over the scene's bottom edge as one row of eight, the way the trouble chips float over its top edge: always on screen with the plants, and
+     it adds no height, so the bubble does not move and the page does not scroll for it. ui.js renderSlots moves the strip into #tent on a phone
+     (the pager column clips anything that sticks out of Axel's panel) and back into #quinn on a wider screen */
+  #tent > #slotStrip.on{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;margin:0;grid-template-columns:repeat(8,minmax(0,1fr));gap:3px}
+  #tent > #slotStrip.on button{min-width:0;padding:2px 0;background:#1a1f1aee;box-shadow:0 2px 8px #000a}
+  /* critic round 9 #3: the "Cold night" / "Heatwave" chip wrapped onto a second header row (the header grew 59 to 91 px every cold night). On a phone
+     it is a round badge on the day box's corner; the word stays for screen readers */
+  header .s-day{position:relative}
+  header .s-day > #wx{position:absolute;top:-4px;right:-9px;z-index:2;width:26px;height:26px;padding:0;gap:0;justify-content:center;border-width:2px;box-shadow:0 2px 6px #000a}
+  header .s-day > #wx span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  header .s-day > #wx svg{width:16px;height:16px}
+  header .s-day > #wx:not(.on){pointer-events:none}
+}
+/* critic round 9 #5: on a shorter phone the two pinned cards (label, value, target, gauge: about 80 px) sat half under the pager pill at rest.
+   There they are one compact row each (label and value; the target and the gauge are on the readings page), so both clear the pill */
+@media (max-width:599px) and (max-height:860px){ /* v60: 860 takes in 390x844, where the tower's two-row bar left the pins 76 % clear */
+  #pins.on{margin:0 0 4px;gap:6px}
+  #pins .rd,#pins .rd.hasg{display:flex;flex-direction:row;align-items:center;gap:6px;min-height:30px;padding:2px 10px;grid-template-columns:none} /* v60 (critic round 10 #1): the base .rd is a column, so the row has to be said (the cards were 49 px, under the pill) */
+  #pins .rd small,#pins .rd svg.rdg{display:none}
+  #pins .rd b{margin-left:auto;white-space:nowrap}
+  #pins .rd>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} /* v64 (critic round 12 nit #4): "Propagator air" wrapped and made the soil pin 40 px; every compact pin is one 30 px row */
+}
+/* v59 (Command Centre after critic round 9 #3): on a phone a card never grows past Axel's 140 px slot, so the page never scrolls for it. The card
+   is a column: .bbody (the text, and on a phone the shop pill and the cart button, ui.js) scrolls inside, and .bfoot (Next / Got it / Skip) is a
+   fixed footer under it, always on screen. A soft fade at the body's bottom edge says there is more to read */
+@media (max-width:599px){
+  #bubble.show{display:flex;flex-direction:column;max-height:140px}
+  #bubble.show .bbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;display:flex;flex-direction:column;align-items:flex-start;gap:8px;-webkit-mask-image:linear-gradient(#000 calc(100% - 14px),#0000);mask-image:linear-gradient(#000 calc(100% - 14px),#0000);padding-bottom:6px}
+  #bubble.show .bbody a.store{margin-top:0;display:inline-flex;align-items:center;min-height:40px;background:transparent;color:var(--brown);border:2px solid var(--orange);font-size:13px;flex:none}
+  #bubble.show .bbody .cart-add{flex:none}
+  #bubble.show .bfoot{flex:none;margin-top:6px;flex-direction:row;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:8px}
+  #bubble.show .bfoot button.next{align-self:center;order:2}
+  /* v60 (critic round 10 #3): the "Paused while Axel talks" tag lay on the card's top edge and ran past its right side. On a phone it is a short
+     "Paused" pill over Axel's head, clear of the card; the rest of the words stay for screen readers */
+  #pausedtag{left:8px;right:auto;top:4px}
+  body.spotting #pausedtag{left:auto}
+  #pausedtag .pt-more{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  #bubble.show .bfoot button.more-cue{order:1;margin-right:auto;min-height:44px;padding:6px 14px;border-radius:999px;border:2px solid var(--orange);background:transparent;color:var(--brown);font-weight:800;font-size:13px} /* v60 (critic round 10 #2): the body runs on below, say so */
+}
+/* v70 (sweep of round 14 nit, Command Centre): the speed buttons are 44 px hit targets everywhere (they were 40). On a phone the room comes from a narrower health bar and 2 px gaps, so the header keeps one row at 360 px */
+@media (max-width:599px){header #speed button{min-width:44px;width:44px;min-height:44px}#speedbtns{gap:2px}.s-health .bar{width:38px}}
+@media (max-width:899px) and (orientation:landscape) and (max-height:520px){header #speed button{min-width:44px;min-height:44px}}
+@media (min-width:1200px){#speed button,#mute{min-height:44px}}
+@media (min-width:600px){#speed button{min-width:44px;min-height:44px}}
+/* v71 (critic round 18 nit 1): a card with two buttons keeps each label on one line on a phone */
+#bubble .bfoot button.next{white-space:nowrap}
+/* v71 (play-test #21 m3): on a phone the 140 px card scrolled Add to cart below its fold, under the buttons; the shop pill under the text still opens the product */
+@media (max-width:599px){#bubble .bbody .cart-add{display:none}}
+/* v71 (play-test #21 nit): at 360 px the weather badge on the day box's top corner covered the clock's last digits; the bottom corner sits beside the shorter stage word */
+@media (max-width:599px){header .s-day > #wx{top:auto;bottom:-6px}}
+</style>
+<script defer src="audio.js"></script>
+<script defer src="engine.js"></script>
+<script defer src="campaign.js"></script>
+<script defer src="art.js"></script>
+<script defer src="scene.js"></script>
+<script defer src="campaign-scenes.js"></script>
+<script defer src="axel.js"></script>
+<script defer src="csv.js"></script>
+<script defer src="live.js"></script>
+<script defer src="products.js"></script>
+<script defer src="cart.js"></script>
+<script defer src="daily.js"></script>
+<script defer src="almanac.js"></script>
+<script defer src="growers.js"></script>
+<script defer src="shop.js"></script>
+<script defer src="away.js"></script>
+<script defer src="sharecard.js"></script>
+<script defer src="challenge.js"></script>
+<script defer src="events.js"></script>
+<script defer src="gifts.js"></script>
+<script defer src="story.js"></script>
+<script defer src="fx.js"></script>
+<script defer src="beginner.js"></script>
+<script defer src="goals.js"></script><!-- v37 -->
+<script defer src="cards.js"></script>
+<script defer src="a11y.js"></script>
+<script defer src="voice.js"></script>
+<script defer src="version.js"></script><!-- v41: loaded once, here; the splash line is filled from its load event -->
+<script defer src="ui.js"></script>
+
+</body></html>

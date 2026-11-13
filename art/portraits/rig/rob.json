@@ -1,0 +1,110 @@
+{
+ "kind": "cast",
+ "who": "rob",
+ "size": [
+  768,
+  1024
+ ],
+ "unit": 1,
+ "rs": 0.6,
+ "parts": {
+  "base": {
+   "src": "art/portraits/rig/rob_base_v5.webp",
+   "x": 220,
+   "y": 169,
+   "w": 543,
+   "h": 855,
+   "pivot": [
+    384.0,
+    1020.0
+   ],
+   "z": 0,
+   "parent": null,
+   "bytes": 19802
+  },
+  "mouth_closed": {
+   "src": "art/portraits/rig/rob_mouth_closed_v5.webp",
+   "x": 440,
+   "y": 594,
+   "w": 104,
+   "h": 31,
+   "pivot": [
+    492.5,
+    612.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 1318
+  },
+  "mouth_open": {
+   "src": "art/portraits/rig/rob_mouth_open_v5.webp",
+   "x": 430,
+   "y": 593,
+   "w": 126,
+   "h": 47,
+   "pivot": [
+    492.5,
+    612.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 2038
+  },
+  "mouth_half": {
+   "src": "art/portraits/rig/rob_mouth_half_v5.webp",
+   "x": 433,
+   "y": 593,
+   "w": 112,
+   "h": 44,
+   "pivot": [
+    492.5,
+    612.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 2148
+  },
+  "mouth_wide": {
+   "src": "art/portraits/rig/rob_mouth_wide_v5.webp",
+   "x": 418,
+   "y": 592,
+   "w": 150,
+   "h": 66,
+   "pivot": [
+    492.5,
+    612.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 2568
+  },
+  "pupil_l": {
+   "src": "art/portraits/rig/rob_pupil_l_v5.webp",
+   "x": 517,
+   "y": 414,
+   "w": 54,
+   "h": 92,
+   "pivot": [
+    543.5,
+    460.0
+   ],
+   "z": 2,
+   "parent": "base",
+   "bytes": 1656
+  },
+  "lid": {
+   "src": "art/portraits/rig/rob_lid_v5.webp",
+   "x": 502,
+   "y": 402,
+   "w": 72,
+   "h": 112,
+   "pivot": [
+    502.0,
+    450.0
+   ],
+   "z": 3,
+   "parent": "base",
+   "bytes": 2062
+  }
+ }
+}

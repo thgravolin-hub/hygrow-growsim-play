@@ -1,0 +1,65 @@
+{
+ "idle": {
+  "frames": [
+   "art/axel/anim/idle_1_v1.webp",
+   "art/axel/anim/idle_2_v1.webp",
+   "art/axel/anim/idle_3_v1.webp",
+   "art/axel/anim/idle_4_v1.webp"
+  ],
+  "fps": 2,
+  "size": [
+   558,
+   667
+  ],
+  "unit": 0.36875
+ },
+ "talk": {
+  "frames": [
+   "art/axel/anim/talk_1_v1.webp",
+   "art/axel/anim/talk_2_v1.webp"
+  ],
+  "fps": 7,
+  "size": [
+   538,
+   644
+  ],
+  "unit": 0.36875
+ },
+ "worried": {
+  "frames": [
+   "art/axel/anim/worried_1_v1.webp",
+   "art/axel/anim/worried_2_v1.webp"
+  ],
+  "fps": 3,
+  "size": [
+   545,
+   649
+  ],
+  "unit": 0.36875
+ },
+ "celebrate": {
+  "frames": [
+   "art/axel/anim/celebrate_1_v2.webp",
+   "art/axel/anim/celebrate_2_v2.webp",
+   "art/axel/anim/celebrate_3_v2.webp"
+  ],
+  "fps": 5,
+  "size": [
+   570,
+   793
+  ],
+  "unit": 0.36875,
+  "once": true
+ },
+ "blink": {
+  "frames": [
+   "art/axel/anim/blink_1_v1.webp"
+  ],
+  "fps": 1,
+  "size": [
+   558,
+   667
+  ],
+  "unit": 0.36875
+ }
+}

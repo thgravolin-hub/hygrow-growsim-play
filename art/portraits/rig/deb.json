@@ -1,0 +1,110 @@
+{
+ "kind": "cast",
+ "who": "deb",
+ "size": [
+  768,
+  1024
+ ],
+ "unit": 1,
+ "rs": 0.6,
+ "parts": {
+  "base": {
+   "src": "art/portraits/rig/deb_base_v5.webp",
+   "x": 126,
+   "y": 265,
+   "w": 538,
+   "h": 759,
+   "pivot": [
+    384.0,
+    1020.0
+   ],
+   "z": 0,
+   "parent": null,
+   "bytes": 22242
+  },
+  "mouth_closed": {
+   "src": "art/portraits/rig/deb_mouth_closed_v5.webp",
+   "x": 377,
+   "y": 650,
+   "w": 14,
+   "h": 13,
+   "pivot": [
+    385.0,
+    656.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 190
+  },
+  "mouth_open": {
+   "src": "art/portraits/rig/deb_mouth_open_v5.webp",
+   "x": 358,
+   "y": 640,
+   "w": 51,
+   "h": 34,
+   "pivot": [
+    385.0,
+    656.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 770
+  },
+  "mouth_half": {
+   "src": "art/portraits/rig/deb_mouth_half_v5.webp",
+   "x": 370,
+   "y": 646,
+   "w": 28,
+   "h": 24,
+   "pivot": [
+    385.0,
+    656.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 428
+  },
+  "mouth_wide": {
+   "src": "art/portraits/rig/deb_mouth_wide_v5.webp",
+   "x": 353,
+   "y": 639,
+   "w": 61,
+   "h": 47,
+   "pivot": [
+    385.0,
+    656.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 898
+  },
+  "brow_l": {
+   "src": "art/portraits/rig/deb_brow_l_v5.webp",
+   "x": 290,
+   "y": 480,
+   "w": 45,
+   "h": 18,
+   "pivot": [
+    312.0,
+    489.0
+   ],
+   "z": 2,
+   "parent": "base",
+   "bytes": 500
+  },
+  "brow_r": {
+   "src": "art/portraits/rig/deb_brow_r_v5.webp",
+   "x": 416,
+   "y": 474,
+   "w": 32,
+   "h": 14,
+   "pivot": [
+    431.5,
+    480.5
+   ],
+   "z": 2,
+   "parent": "base",
+   "bytes": 350
+  }
+ }
+}

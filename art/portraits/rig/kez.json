@@ -1,0 +1,138 @@
+{
+ "kind": "cast",
+ "who": "kez",
+ "size": [
+  768,
+  1024
+ ],
+ "unit": 1,
+ "rs": 0.6,
+ "parts": {
+  "base": {
+   "src": "art/portraits/rig/kez_base_v5.webp",
+   "x": 246,
+   "y": 178,
+   "w": 415,
+   "h": 624,
+   "pivot": [
+    384.0,
+    802.0
+   ],
+   "z": 0,
+   "parent": null,
+   "bytes": 17640
+  },
+  "mouth_closed": {
+   "src": "art/portraits/rig/kez_mouth_closed_v5.webp",
+   "x": 407,
+   "y": 461,
+   "w": 21,
+   "h": 19,
+   "pivot": [
+    428.0,
+    470.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 308
+  },
+  "mouth_open": {
+   "src": "art/portraits/rig/kez_mouth_open_v5.webp",
+   "x": 401,
+   "y": 443,
+   "w": 55,
+   "h": 38,
+   "pivot": [
+    428.5,
+    470.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 858
+  },
+  "mouth_half": {
+   "src": "art/portraits/rig/kez_mouth_half_v5.webp",
+   "x": 401,
+   "y": 450,
+   "w": 56,
+   "h": 31,
+   "pivot": [
+    428.5,
+    470.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 780
+  },
+  "mouth_wide": {
+   "src": "art/portraits/rig/kez_mouth_wide_v5.webp",
+   "x": 396,
+   "y": 442,
+   "w": 65,
+   "h": 53,
+   "pivot": [
+    428.5,
+    470.0
+   ],
+   "z": 1,
+   "parent": "base",
+   "bytes": 954
+  },
+  "pupil_l": {
+   "src": "art/portraits/rig/kez_pupil_l_v5.webp",
+   "x": 339,
+   "y": 374,
+   "w": 42,
+   "h": 49,
+   "pivot": [
+    359.5,
+    397.5
+   ],
+   "z": 2,
+   "parent": "base",
+   "bytes": 974
+  },
+  "pupil_r": {
+   "src": "art/portraits/rig/kez_pupil_r_v5.webp",
+   "x": 429,
+   "y": 356,
+   "w": 55,
+   "h": 48,
+   "pivot": [
+    456.0,
+    380.0
+   ],
+   "z": 2,
+   "parent": "base",
+   "bytes": 1102
+  },
+  "lid": {
+   "src": "art/portraits/rig/kez_lid_v5.webp",
+   "x": 318,
+   "y": 350,
+   "w": 182,
+   "h": 86,
+   "pivot": [
+    384.0,
+    436.0
+   ],
+   "z": 3,
+   "parent": "base",
+   "bytes": 2716
+  },
+  "brow_l": {
+   "src": "art/portraits/rig/kez_brow_l_v5.webp",
+   "x": 418,
+   "y": 331,
+   "w": 50,
+   "h": 21,
+   "pivot": [
+    442.5,
+    341.0
+   ],
+   "z": 2,
+   "parent": "base",
+   "bytes": 682
+  }
+ }
+}

@@ -1,0 +1,270 @@
+{
+ "size": [
+  558,
+  667
+ ],
+ "unit": 0.36875,
+ "rs": 1.0,
+ "ground": [
+  270,
+  662
+ ],
+ "face": {
+  "eye_l": [
+   187,
+   142
+  ],
+  "eye_r": [
+   315,
+   150
+  ],
+  "mouth": [
+   245.0,
+   188
+  ],
+  "head_pivot": [
+   271,
+   246
+  ]
+ },
+ "parts": {
+  "body": {
+   "src": "art/axel/rig/axel_body_v9.webp",
+   "x": 105,
+   "y": 186,
+   "w": 449,
+   "h": 481,
+   "pivot": [
+    270.0,
+    662.0
+   ],
+   "z": 0,
+   "parent": null,
+   "bytes": 19670
+  },
+  "head": {
+   "src": "art/axel/rig/axel_head_v9.webp",
+   "x": 132,
+   "y": 48,
+   "w": 279,
+   "h": 210,
+   "pivot": [
+    271.0,
+    246.0
+   ],
+   "z": 0,
+   "parent": "body",
+   "bytes": 6986
+  },
+  "gill_l": {
+   "src": "art/axel/rig/axel_gill_l_v9.webp",
+   "x": 76,
+   "y": 16,
+   "w": 141,
+   "h": 221,
+   "pivot": [
+    146.0,
+    150.0
+   ],
+   "z": -1,
+   "parent": "head",
+   "bytes": 6362
+  },
+  "gill_r": {
+   "src": "art/axel/rig/axel_gill_r_v9.webp",
+   "x": 327,
+   "y": 18,
+   "w": 167,
+   "h": 229,
+   "pivot": [
+    396.0,
+    150.0
+   ],
+   "z": -1,
+   "parent": "head",
+   "bytes": 7634
+  },
+  "eye_l": {
+   "src": "art/axel/rig/axel_eye_l_v9.webp",
+   "x": 157,
+   "y": 112,
+   "w": 55,
+   "h": 61,
+   "pivot": [
+    187.0,
+    142.0
+   ],
+   "z": 1,
+   "parent": "head",
+   "bytes": 930
+  },
+  "pupil_l": {
+   "src": "art/axel/rig/axel_pupil_l_v9.webp",
+   "x": 171,
+   "y": 121,
+   "w": 34,
+   "h": 34,
+   "pivot": [
+    187.0,
+    142.0
+   ],
+   "z": 2,
+   "parent": "head",
+   "bytes": 464
+  },
+  "eye_r": {
+   "src": "art/axel/rig/axel_eye_r_v9.webp",
+   "x": 286,
+   "y": 122,
+   "w": 61,
+   "h": 62,
+   "pivot": [
+    315.0,
+    150.0
+   ],
+   "z": 1,
+   "parent": "head",
+   "bytes": 950
+  },
+  "pupil_r": {
+   "src": "art/axel/rig/axel_pupil_r_v9.webp",
+   "x": 295,
+   "y": 129,
+   "w": 35,
+   "h": 35,
+   "pivot": [
+    315.0,
+    150.0
+   ],
+   "z": 2,
+   "parent": "head",
+   "bytes": 528
+  },
+  "lid": {
+   "src": "art/axel/rig/axel_lid_v9.webp",
+   "x": 151,
+   "y": 106,
+   "w": 201,
+   "h": 81,
+   "pivot": [
+    251.0,
+    146.0
+   ],
+   "z": 3,
+   "parent": "head",
+   "bytes": 1558
+  },
+  "mouth_closed": {
+   "src": "art/axel/rig/axel_mouth_closed_v9.webp",
+   "x": 170,
+   "y": 168,
+   "w": 151,
+   "h": 47,
+   "pivot": [
+    243.0,
+    188.0
+   ],
+   "z": 1,
+   "parent": "head",
+   "bytes": 1300
+  },
+  "mouth_half": {
+   "src": "art/axel/rig/axel_mouth_half_v9.webp",
+   "x": 174,
+   "y": 173,
+   "w": 142,
+   "h": 44,
+   "pivot": [
+    243.0,
+    188.0
+   ],
+   "z": 1,
+   "parent": "head",
+   "bytes": 882
+  },
+  "mouth_open": {
+   "src": "art/axel/rig/axel_mouth_open_v9.webp",
+   "x": 173,
+   "y": 173,
+   "w": 145,
+   "h": 51,
+   "pivot": [
+    243.0,
+    188.0
+   ],
+   "z": 1,
+   "parent": "head",
+   "bytes": 1230
+  },
+  "mouth_wide": {
+   "src": "art/axel/rig/axel_mouth_wide_v9.webp",
+   "x": 169,
+   "y": 171,
+   "w": 152,
+   "h": 62,
+   "pivot": [
+    243.0,
+    188.0
+   ],
+   "z": 1,
+   "parent": "head",
+   "bytes": 1362
+  },
+  "arm_r": {
+   "src": "art/axel/rig/axel_arm_r_v9.webp",
+   "x": 328,
+   "y": 256,
+   "w": 111,
+   "h": 212,
+   "pivot": [
+    382.0,
+    292.0
+   ],
+   "z": 3,
+   "parent": "body",
+   "bytes": 3320
+  },
+  "hand_rest": {
+   "src": "art/axel/rig/axel_hand_rest_v9.webp",
+   "x": 335,
+   "y": 447,
+   "w": 100,
+   "h": 96,
+   "pivot": [
+    386.0,
+    462.0
+   ],
+   "z": 4,
+   "parent": "arm_r",
+   "bytes": 1636
+  },
+  "hand_point": {
+   "src": "art/axel/rig/axel_hand_point_v9.webp",
+   "x": 326,
+   "y": 439,
+   "w": 103,
+   "h": 140,
+   "pivot": [
+    386.0,
+    460.0
+   ],
+   "z": 5,
+   "parent": "arm_r",
+   "bytes": 3066
+  },
+  "hand_thumb": {
+   "src": "art/axel/rig/axel_hand_thumb_v9.webp",
+   "x": 357,
+   "y": 367,
+   "w": 56,
+   "h": 121,
+   "pivot": [
+    386.0,
+    470.0
+   ],
+   "z": 5,
+   "parent": "arm_r",
+   "bytes": 1512
+  }
+ }
+}
