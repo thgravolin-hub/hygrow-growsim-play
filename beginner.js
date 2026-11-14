@@ -153,8 +153,10 @@
   var tileBad = function (k) { return function (s, r) { var c = tileState(k, r); return c === 'warn' || c === 'bad'; }; };
   var tankLow = function (s, r) { return !!(r && s.cap && r.reservoirL <= 0.5 * s.cap); };
   var pickRisk = function (s) { var P = (s && s.pr) || {}; return (P.bolt || 0) >= 1 || (P.tip || 0) >= 2; }; /* the same test as the engine's Pick it now advice */
+  /* v72 (critic round 19 m2): a tower slot is ready when a head has filled out (a 0.02 kg seedling-sized head ended the lesson with You did it); a cut crop when there is a cut worth taking */
+  var slotReady = function (s, x) { var k = (x && x.ripeKg) || 0, C0 = window.CROP_DATA && CROP_DATA[s.cropId], hv = C0 && C0.harvest; if (hv === 'once') return k >= 0.15 || ((x.stageName === 'harvest' || x.stageName === 'mature') && k >= 0.08) /* v73 (rerun m1): 0.02 kg ended the tower lesson */ || (k >= 0.1 && pickRisk(s)); if (hv === 'cut') return k >= 0.05; return k >= 0.05; }; /* v74 (play review on v73 m2): a 0.02 kg strawberry slot was ready */
   var ripeNow = function (s, r) {
-    try { var g = G(), m = methodNow(); if (m.how === 'tower' && Sim.slotInfo) { return Sim.slotInfo(s).some(function (x) { return (x.ripeKg || 0) >= 0.02; }); } } catch (e) {}
+    try { var g = G(), m = methodNow(); if (m.how === 'tower' && Sim.slotInfo) { return Sim.slotInfo(s).some(function (x) { return slotReady(s, x); }); } } catch (e) {}
     var rk = r && r.plant ? (r.plant.ripeKg || 0) : 0;
     /* v68 (play-test #19 m5): a pick-once crop is called ripe when it has filled out (the last stage, or half its best-case weight), or when waiting would cost it (starting to bolt, leaf edges burning); the first pickable head was a quarter of the yield */
     try { var C = window.CROP_DATA && CROP_DATA[s.cropId]; if (C && C.harvest === 'once' && !s.cropDone) { if (rk < 0.02) return false; var X = (C.yieldTarget || 0) * (s.plantedEver || s.nplants || 1); return !!(r.mature || (C.stages && s.stage >= C.stages.length - 1) || (X > 0 && rk >= 0.5 * X) || (rk >= Math.max(0.1, 0.25 * X) && pickRisk(s))); /* v69 (critic round 17 m3, play-test #20 m1): a bolting or tip-burnt head is called only once it is worth picking (0.1 kg and a quarter of the best case), not at 0.02 kg */ } } catch (e) {}
@@ -221,7 +223,7 @@
       { title: 'Plant the slots', tap: 'Plant', need: ['plant'], hl: sel('plant'), say: OPEN.tower, hint: 'Tap the glowing Plant button to fill the slots.', waitFor: function (s, a) { return a === 'plant'; }, afterHrs: 1, after: function () { return 'Every slot grows at its own pace.'; } },
       S_MIX(false), S_PH, S_TOPUP,
       { title: 'Pick a slot', speed: 6, tap: 'Pick', waitTxt: 'Waiting for a slot to ripen.', watch: ripeNow, need: ['harvest'], hl: sel('harvest'), watchSay: 'Now we wait. Keep the tank and tiles green and I will tell you when a slot is ripe.',
-        onEnterAct: function () { try { var s = S(), a = Sim.slotInfo(s); for (var i = 0; i < a.length; i++) if ((a[i].ripeKg || 0) >= 0.02) { s.__slot = i; break; } } catch (e) {} },
+        onEnterAct: function () { try { var s = S(), a = Sim.slotInfo(s); for (var i = 0; i < a.length; i++) if (slotReady(s, a[i])) { s.__slot = i; break; } } catch (e) {} },
         say: function () { return 'A slot is ripe! Tap ' + tabAct('harvest') + '. Tap any slot to pick a different one.'; }, hint: 'Tap the glowing Pick button.', waitFor: function (s, a) { return a === 'harvest' || (s.harvestedKg || 0) > 0; } },
       S_DONE]; }
   };
@@ -455,7 +457,7 @@
         var mv = r && r.moisture, mt = r && r.targets && r.targets.moisture, mc0 = methodCopy();
         if (typeof mv === 'number' && Array.isArray(mt) && mv > mt[1]) line = mc0.root + ' is too wet: skip the next water, the roots need air.';
         else if (typeof mv === 'number' && Array.isArray(mt) && mv >= mt[0]) { coached[k] = false; continue; }
-        else { var b = hasAct('water') ? 'Water' : hasAct('drip') ? 'Drip' : null; if (b) line = mc0.root + (c === 'bad' ? ' is very dry and the plant is suffering. Tap ' + b + '.' : ' is dry. Tap ' + b + '.'); }
+        else { var b = hasAct('water') ? 'Water' : hasAct('drip') ? 'Drip' : null; if (b) line = mc0.root + (c === 'bad' ? ' is very dry, and the roots will suffer soon. Tap ' + b + '.' : ' is dry. Tap ' + b + '.'); }
       }
       else if (k === 'airTemp' && methodCopy().out) { /* v36b: no fan or lights outdoors: the lever is Cover at night, Shade in the sun */
         var at = r && r.targets && r.targets.airTemp, av = r && r.airTemp, mc1 = methodCopy();
@@ -842,7 +844,8 @@
     try { document.dispatchEvent(new CustomEvent('hygrow:skip', { detail: { done: true } })); } catch (e) {} /* v49: no bubble under the end card (play-test #8: a tap on a hidden Got it landed on the title) */
     var d = document.createElement('div'); d.className = 'modal show'; d.id = 'bgDone'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'First grow done');
     var sc = doneStats(); /* [M31] */
-    d.innerHTML = '<div class="card bgd"><h2>' + (+sc.kg > 0 ? 'You did it!' : 'Lesson over') + '</h2><p>' + (!(+sc.kg > 0) ? 'The ' + cropWord() + ' finished with nothing ripe to pick. Next time keep every tile green, and act as soon as one goes orange.' : replaying ? 'You grew and picked your ' + cropWord() + ' with Axel again.' : 'You grew and picked your first ' + cropWord() + ' with Axel.') + (mates ? ' <b>+' + mates + ' Mates</b> for the Campaign.' : '') + '</p>' +
+    var kgFloor = (function () { try { var C1 = window.CROP_DATA && CROP_DATA[S().cropId]; return C1 && C1.harvest === 'cut' ? 0.01 : 0.05; } catch (e) { return 0.05; } })(); /* v75 (play review on v74 m1): a cut yields about 0.4 of the slot, so a ready basil slot picks about 0.02 kg */
+    d.innerHTML = '<div class="card bgd"><h2>' + (+sc.kg >= kgFloor ? 'You did it!' : 'Lesson over') + '</h2><p>' + (!(+sc.kg > 0) ? 'The ' + cropWord() + ' finished with nothing ripe to pick. Next time keep every tile green, and act as soon as one goes orange.' : +sc.kg < kgFloor ? 'You picked only a little ' + cropWord() + '. Next time let it fill out before you pick.' /* v74 (play review on v73 m3): 0.01 kg of basil ended on You did it */ : replaying ? 'You grew and picked your ' + cropWord() + ' with Axel again.' : 'You grew and picked your first ' + cropWord() + ' with Axel.') + (mates ? ' <b>+' + mates + ' Mates</b> for the Campaign.' : '') + '</p>' +
       '<div class="bgd-stats"><div><b>' + sc.kg + ' kg</b><span>Picked</span></div><div><b>' + sc.eco + '</b><span>Eco score</span></div></div>' + (sc.keep ? '<p class="bgd-keep">' + sc.keep + '</p>' : '') + '<div class="foot"><button class="big" id="bgdKeep" type="button">Finish lesson, keep growing</button><button class="ghost" id="bgdMenu" type="button">Back to the title</button><button class="ghost" id="bgdKit" type="button">Take this home</button><button class="ghost" id="bgdCamp" type="button">Start the Campaign</button></div>' +
       '<div class="bgd-trail">' + trail() + '</div></div>'; /* v66 (round 15 keyboard m5): the buttons come before the path pills, so Finish lesson is the first stop after the heading */
     document.body.appendChild(d);

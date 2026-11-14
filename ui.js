@@ -406,7 +406,7 @@
     const done = cur; cur = null; hideSpot(); try { Sfx.stopVoice(); } catch (e) {}
     if (done.opts.then) { try { done.opts.then(); } catch (e) { console.warn(e); } }
     nextSay();
-    try { if (document.activeElement === document.body || !document.activeElement) { const t = (done.opts.target && document.querySelector(done.opts.target)) || $('#dock button.bg-pulse, #dock button.ready') || $('#dock button'); if (t && t.focus) t.focus({ preventScroll: true }); } } catch (e) {} /* v37: focus used to drop to body after Got it */
+    setTimeout(() => { try { if (document.activeElement === document.body || !document.activeElement) { const t = (done.opts.target && document.querySelector(done.opts.target)) || $('#dock button.bg-pulse, #dock button.ready') || $('#dock button'); if (t && t.focus) t.focus({ preventScroll: true }); } } catch (e) {} }, 250); /* v72 (sweep of round 19): 250 ms later, so a dialog closed by the same Escape gives focus back to its opener first */ /* v37: focus used to drop to body after Got it */
   }
   function nextSay() {
     let m = sayQueue.shift();
@@ -1074,7 +1074,7 @@
       else if (k === 'rain' || k === 'wind') text = nm + ' is ' + col + '. That is the weather, so give it time.';
       else if (k === 'airTemp' || k === 'rh' || k === 'vpd') { const h = hintFor(k, rd); if (h && h.ctl && has(h.ctl)) { ctl = h.ctl; text = endDot(h.text); } else text = h && h.text ? h.text : nm + ' is ' + col + '. Give it a little time.'; }
       else if (k === 'ec' && S.pot) { ctl = high ? (has('water') ? 'water' : null) : low ? (has('feed') ? 'feed' : null) : null; text = nm + ' is ' + col + '.' + (ctl ? ' Tap ' + FIXNAME[ctl] + (high ? ' to wash the salt out.' : '.') : ' Give it a little time.'); } /* v71 (critic round 18 m1): a pot has no tank buttons, so high EC is Water and low EC is Feed (it said Give it a little time) */
-      else { ctl = fixFor(k, rd); if (!has(ctl)) ctl = null; text = nm + ' is ' + col + '.' + (ctl ? ' Tap ' + (FIXNAME[ctl] || ctl) + '.' : ' Give it a little time.'); }
+      else { ctl = fixFor(k, rd); if (!has(ctl)) ctl = null; text = nm + ' is ' + col + '.' + (ctl ? ' Tap ' + (FIXNAME[ctl] || ctl) + '.' : k === 'ph' ? ' There is no pH button for this grow, so keep Water and Feed steady and the other tiles green.' : ' Give it a little time.'); } /* v72 (play-test #22 m3): a pH tile with no button was told to wait for 60 days */
       return { k, sev, text: oneBubble(text), ctl };
     } catch (e) { return null; }
   }
@@ -1105,7 +1105,7 @@
   const TAP_AXEL = ['Hi there! Tap the plant any time and I will tell you how it is going.', 'Water is my whole world. Check the root zone for me?'];
   const STATUS_KEYS = ['ec', 'ph', 'airTemp', 'rh', 'vpd', 'reservoirL', 'waterTemp'];
   /* Ask Axel inside the lesson: diagnosis id -> [its tile, the buttons that fix it] */
-  const DIAG_TILE = { ec: 'ec', ph: 'ph', rh: 'rh', vpd: 'vpd', temp: 'airTemp', wtemp: 'waterTemp', light: 'dli', water: 'reservoirL' }; /* v60: diagnosis id -> the tile that shows it */
+  const DIAG_TILE = { ec: 'ec', ph: 'ph', rh: 'rh', vpd: 'vpd', temp: 'airTemp', warmNight: 'airTemp', wtemp: 'waterTemp', light: 'dli', water: 'reservoirL' }; /* v60: diagnosis id -> the tile that shows it */
   const LESSON_ASK = { rh: ['rh', ['fan', 'humidity']], vpd: ['vpd', ['fan', 'humidity']], temp: ['airTemp', ['fan']], ec: ['ec', ['mix', 'topUp', 'changeRes']], ph: ['ph', ['phDown', 'phUp']], water: ['reservoirL', ['topUp']] };
   let plantTapAt = -1e9, axelTapAt = -1e9, axelTapN = 0; /* -1e9: performance.now() starts near 0, so 0 would read as "just tapped" in the first seconds */
   const tileShown = k => { const n = document.querySelector('#readings .rd[data-reading="' + k + '"]'); return !!(n && n.getClientRects().length); };
@@ -1384,7 +1384,7 @@
   }
   const PROB_TIP = {
     tip: ['Fix: fan on, EC back in range, and a little Calmag Agent in the tank. Tipburn is calcium not reaching the fast-growing heart.', CAT.nutrients, 'Calmag Agent at HyGrow'],
-    bolt: ['Fix: fan up, lights down, shorter days. Lettuce bolts once the tent gets warm, and a HyGrow clip fan keeps it cool.', CAT.fans, 'Clip fans at HyGrow'],
+    bolt: ['Fix: fan up and shorter light hours. Lettuce bolts once the tent gets warm, and a HyGrow clip fan keeps it cool.', CAT.fans, 'Clip fans at HyGrow'],
     dm: ['Fix: drop humidity under 80%, get the air moving and thin the old leaves. Downy mildew loves damp, still air.', CAT.fans, 'Fans and climate gear'], /* v37: Plant Guard is not a fungicide */
     pm: ['Fix: lift the airflow, thin the old leaves and try a milk spray (one part milk to nine of water). Powdery mildew loves damp, mild, still air.', CAT.fans, 'Fans and climate gear'],
     cold: ['Fix: slow the fan, keep the lights on and warm the roots with a Cultivate heat mat. Cold stalls growth.', CAT.propagation, 'Heat mats at HyGrow'],
@@ -2126,7 +2126,7 @@
   const GUARD_NAME = { ec: 'EC', ph: 'pH', airTemp: 'Air', rh: 'Humidity', vpd: 'VPD', waterTemp: 'Water temp', reservoirL: 'Tank', moisture: 'Soil' }; /* v71 (play-test #21 M1): a red Soil or Coco tile holds the clock too */ /* v52 (play-test #10 #4): Water alone read like a job on a tub */
   const gName = k => (k === 'reservoirL' && S && S.pot) ? 'Water' : (k === 'moisture' && typeof S !== 'undefined' && S && S.method && S.method.how === 'coco') ? 'Coco' : GUARD_NAME[k]; /* v51 (critic round 5): pots have no tank */
   const GUARD_SLACK = { ec: 0.05, ph: 0.05, airTemp: 0.5, waterTemp: 0.5, rh: 2, vpd: 0.05 };
-  const GUARD_ORANGE_HOURS = 2, GUARD_REARM_HOURS = 1, GUARD_HEALTH_DROP = 5;
+  const GUARD_ORANGE_HOURS = 2, GUARD_REARM_HOURS = 1, GUARD_HEALTH_DROP = 5, GUARD_RED_AGAIN = 6;
   /* the colour a tile shows for reading v against band tg when the engine says st: inside the band plus its slack is green, otherwise the engine's colour */
   function guardColour(k, v, tg, st) {
     if (st !== 'warn' && st !== 'bad') return st;
@@ -2178,11 +2178,11 @@
       for (let i = 0; i < g.hist.length - 1; i++) { const p = g.hist[i], dt = gh - p.gh; if (dt > 0 && dt <= 3 && (p.h - health) / Math.max(1, dt) >= GUARD_HEALTH_DROP) drop = true; }
     }
     if (!all.length) { if (g.green == null) g.green = gh; } else g.green = null;
-    if (g.tripped) { if (g.green != null && gh - g.green >= GUARD_REARM_HOURS) g.tripped = false; return null; }
+    if (g.tripped) { if (g.green != null && gh - g.green >= GUARD_REARM_HOURS) { g.tripped = false; g.n = 1; g.hAt = null; return null; } const reds = all.filter(t => t.s === 'bad'); const sank = typeof health === 'number' && typeof g.hAt === 'number' && g.hAt - health >= 10; /* v74 (play review on v73 m1): a crop still losing health is slowed again at once */ if (fast && reds.length && g.at != null && (sank || gh - g.at >= GUARD_RED_AGAIN * (g.n || 1))) { g.at = gh; g.hAt = health; g.n = sank ? 1 : Math.min(8, (g.n || 1) * 2); /* v73 (play review m1): back off 6, 12, 24, 48 h */ return { txt: guardToast(reds, false), tiles: reds, health: false }; } return null; } /* v72 (play-test #22 m2): a tile still red 6 game hours after a slowdown slows a re-tapped 3x or 8x again */
     if (!fast) return null;
     const off = all.filter(t => t.s === 'bad' || gh - g.since[t.k] >= GUARD_ORANGE_HOURS);
     if (!off.length && !drop) return null;
-    g.tripped = true; g.green = null;
+    g.tripped = true; g.green = null; g.at = gh; g.hAt = (typeof health === 'number' && isFinite(health)) ? health : null; /* v75 (play review on v74 n1): each episode starts from its own health */
     return { txt: guardToast(off, drop), tiles: off, health: drop };
   }
   /* SPEEDGUARD:end */
@@ -2284,7 +2284,7 @@
     try { Sfx.music(true, 'night'); } catch (e) {}
     const esc = escH; /* one definition (escH, top of the render section); window.escHtml shares it with away.js */
     const hasCamp = !!camp;
-    $('#harvest-title').textContent = 'The plant didn’t make it';
+    $('#harvest-title').textContent = 'The plant didn’t make it'; { const hm = $('#harvest'); if (hm) { hm.removeAttribute('aria-label'); hm.setAttribute('aria-labelledby', 'harvest-title'); } } /* v72: the lost card reads its own heading */
     $('#harvestBody').innerHTML = `<div class="stars" role="img" aria-label="no stars"><span aria-hidden="true">★★★★★</span></div>
       <div class="lost-axel"><img src="axel/worried_v2.webp" alt="" width="112" height="112" loading="lazy"></div>
       <div class="camp-end fail lost-end"><h3>Lost on day ${L.day}: ${esc(L.cause)}</h3><p class="lost-why">${esc(L.why)}</p>
@@ -2313,8 +2313,9 @@
     setSpeed(0); if (mode !== 'beginner') clearSave(); /* a Grow with Axel replay must never clear the player's real save */ endShown = true; stopLive();
     { const ht = $('#harvest-title'); if (ht) ht.textContent = 'Harvest time!'; } /* [M29] */
     const cr = camp && window.Campaign ? (endRes || Campaign.onHarvest(S)) : null;
+    { const hm = $('#harvest'); if (hm) { if (cr) { hm.removeAttribute('aria-labelledby'); hm.setAttribute('aria-label', (cr.passed ? 'Chapter complete' : 'Not quite') + ', Harvest time'); } else { hm.removeAttribute('aria-label'); hm.setAttribute('aria-labelledby', 'harvest-title'); } } } /* v72 (keyboard round 18 and 19 n1): a chapter end card is named for what it is, not only Harvest time */
     if (cr && !sceneShown && window.Story) {
-      const ch0 = Campaign.chapter(Campaign.active()), sc0 = ch0 && ch0.scenes && (cr.passed ? ch0.scenes.close : ch0.scenes.closeFail);
+      const ch0 = Campaign.chapter(Campaign.active()), sc0 = ch0 && ch0.scenes && (cr.passed ? ch0.scenes.close : S && S.health >= 60 ? null : ch0.scenes.closeFail); /* v72 (critic round 19 m1): the fail scene commiserates a rough run and blames the tank; a healthy plant that missed the goal (an early pick) goes straight to the card, which names the cause */
       if (sc0) { sceneShown = true; return playScene(sc0, () => showHarvest(cr)); }
     }
     sceneShown = false;
@@ -2328,7 +2329,9 @@
     const C = window.CROP_DATA && CROP_DATA[S.cropId], tgt = C ? C.yieldTarget * (S.nplants || 1) : 1, mt = (S.setup && S.setup.meters) || {};
     /* first harvest ever: if doAct did not already mark it (a grow that ends on its own), do it here; the banner is one line above the scores */
     let fhHtml = '';
-    try { if (window.Fx && Fx.firstHarvest) { Fx.firstHarvest({ kg: sc.yieldKg, crop: cropOf(S.cropId || pick.crop).name, cropId: S.cropId || pick.crop, quinn, say: false, sound: true }); fhHtml = Fx.firstHarvestBanner({ kg: sc.yieldKg, share: !!(window.ShareCard && ShareCard.share) }); } } catch (e) { warnOnce('showHarvest#2', e); }
+    const noKg = !((sc.yieldKg || 0) >= 0.005); /* v72 (play-test #22 m5): a chapter that ends at its goal before any pick (chapter 3 ends at flowering) showed a 0.00 kg harvest card */
+    { const ht = $('#harvest-title'); if (ht && cr && noKg) { ht.textContent = cr.passed ? 'Chapter goal reached' : 'Chapter over'; const hm2 = $('#harvest'); if (hm2) hm2.setAttribute('aria-label', ht.textContent + ', Harvest time'); } } /* v73 (keyboard review n1): the name matches the heading */
+    try { if (!noKg && window.Fx && Fx.firstHarvest) { Fx.firstHarvest({ kg: sc.yieldKg, crop: cropOf(S.cropId || pick.crop).name, cropId: S.cropId || pick.crop, quinn, say: false, sound: true }); fhHtml = Fx.firstHarvestBanner({ kg: sc.yieldKg, share: !!(window.ShareCard && ShareCard.share) }); } } catch (e) { warnOnce('showHarvest#2', e); }
     const bl = [
       { k: 'water', name: 'Water Wise', ok: (sc.ecoParts && sc.ecoParts.water) >= 20, hint: 'Eco water part 20 of 25 or more' }, /* [M33] */
       { k: 'refill', name: 'Refill Champ', ok: (S.__refills || 0) >= 3, hint: 'Topped up the tank 3 times or more' },
@@ -2343,7 +2346,7 @@
       <div class="stars" role="img" aria-label="${stars} of 5 stars"><span class="on" aria-hidden="true">${'★'.repeat(stars)}</span><span aria-hidden="true">${'★'.repeat(5 - stars)}</span></div>
       ${fhHtml}
       <div class="scores">
-        <div><b>${fmt(sc.yieldKg, 2)} kg</b><span>Yield</span></div>
+        <div><b>${noKg ? 'None yet' : fmt(sc.yieldKg, 2) + ' kg'}</b><span>${noKg ? 'Picked' : 'Yield'}</span></div>
         <div><b>${Math.round(sc.health ?? 0)}</b><span>Plant health</span></div>
         <div><b>${Math.round(sc.eco ?? 0)}</b><span>Eco score</span><small class="plain">Out of 100. You steer it: water, feed, no spray, climate.</small></div>
         <div><b>${Math.round(sc.waterUsedL ?? 0)} L</b><span>Water used</span></div>
@@ -2549,18 +2552,26 @@
     }
     function paint(focusSel) {
       const done = !!(Beginner.isDone && Beginner.isDone()), lesson = done ? 'Replay the lesson' : 'Do the guided lesson';
-      el.innerHTML = ask
+      let canFin = false; try { canFin = !!(camp && S && window.Campaign && Campaign.canFinish && Campaign.canFinish(S)); } catch (e) {}
+      const canEnd = !camp && !!S && !S.cropDone && !S.lost && (S.harvestedKg || 0) > 0; /* v72 (play-test #22 m3): a picked crop that stalls (a cold garden chilli at 35 health) had no way to reach its harvest card or weekly score */ /* v72: the chapter 2 offer can be taken from the Menu once dismissed */
+      const kgNow = S ? fmt((Sim.score ? Sim.score(S).yieldKg : S.harvestedKg) || 0, 2) : '0'; /* v73 (play review m3): the confirm counts what the card counts */
+      const ASKS = { end: ['End this grow?', 'The crop ends here and the harvest card counts what you have picked and what is ripe (' + kgNow + ' kg). You cannot grow this crop on afterwards.', 'End the grow', '#mmEnd'], finish: ['Finish the chapter?', 'The chapter goal is done. Finishing now ends the chapter and counts it; this crop stops growing.', 'Finish', '#mmFinish'] }; /* v72: the two new Menu entries end something for good, so each asks first (Command Centre after round 19) */
+      el.innerHTML = ask && ASKS[ask]
+        ? '<div class="card menucard"><h2 id="mmAskH">' + ASKS[ask][0] + '</h2><p id="mmAskP">' + ASKS[ask][1] + '</p><div class="foot"><button class="ghost" id="mmNo" type="button">Not now</button><button class="big" id="mmGo" type="button">' + ASKS[ask][2] + '</button></div></div>'
+        : ask
         ? '<div class="card menucard"><h2 id="mmAskH">' + lesson + '</h2><p id="mmAskP">' + (done ? Beginner.REPLAY_CONFIRM : Beginner.REPLAY_CONFIRM.replace(' again', '')) + '</p><div class="foot"><button class="ghost" id="mmNo" type="button">Not now</button><button class="big" id="mmGo" type="button">' + (done ? 'Start again' : 'Start') + '</button></div></div>'
-        : '<div class="card menucard"><h2>Menu</h2><div class="menulist"><button class="mode" id="mmTitle" type="button"><b>Back to the title</b><span>' + (saveErr ? 'Couldn’t save: browser storage is full or blocked.' : 'Your grow is saved.') + '</span></button><button class="mode" id="mmReplay" type="button"><b>' + lesson + '</b><span>About 10 minutes with Axel at 3x, any time.</span></button><button class="mode" id="mmCredits" type="button"><b>Credits</b><span>Who made what, and the licences.</span></button><div id="mmVol"></div></div><div class="foot"><button class="ghost" id="mmClose" type="button">Keep growing</button></div></div>';
+        : '<div class="card menucard"><h2>Menu</h2><div class="menulist">' + (canFin ? '<button class="mode" id="mmFinish" type="button"><b>Finish the chapter</b><span>The chapter goal is done. End it now and see how you did.</span></button>' : '') + (canEnd ? '<button class="mode" id="mmEnd" type="button"><b>End this grow</b><span>Count what you have picked and see the harvest card.</span></button>' : '') + '<button class="mode" id="mmTitle" type="button"><b>Back to the title</b><span>' + (saveErr ? 'Couldn’t save: browser storage is full or blocked.' : 'Your grow is saved.') + '</span></button><button class="mode" id="mmReplay" type="button"><b>' + lesson + '</b><span>About 10 minutes with Axel at 3x, any time.</span></button><button class="mode" id="mmCredits" type="button"><b>Credits</b><span>Who made what, and the licences.</span></button><div id="mmVol"></div></div><div class="foot"><button class="ghost" id="mmClose" type="button">Keep growing</button></div></div>';
       const b = id => el.querySelector(id);
       /* v68 (round 16 keyboard m7): the confirm names the dialog after its own heading and reads its text; Not now (and Escape, which presses it) goes back to the button that asked */
       if (ask) { el.removeAttribute('aria-label'); el.setAttribute('aria-labelledby', 'mmAskH'); el.setAttribute('aria-describedby', 'mmAskP'); } else { el.removeAttribute('aria-labelledby'); el.removeAttribute('aria-describedby'); el.setAttribute('aria-label', 'Menu'); }
-      if (ask) { b('#mmNo').onclick = () => { Sfx.play('click'); ask = false; paint('#mmReplay'); }; b('#mmGo').onclick = replay; }
-      else { b('#mmTitle').onclick = toTitle; b('#mmReplay').onclick = () => { Sfx.play('click'); ask = true; paint(); }; b('#mmClose').onclick = () => { Sfx.play('click'); close(true, true); }; b('#mmCredits').onclick = () => { Sfx.play('click'); Credits.open(); }; const mv = b('#mmVol'); if (mv) mv.appendChild(volumeRow()); }
-      const f = b(focusSel || (ask ? '#mmGo' : '#mmTitle')); if (f && f.focus) f.focus();
+      if (ask) { const back = ASKS[ask] ? ASKS[ask][3] : '#mmReplay', kind = ask; b('#mmNo').onclick = () => { Sfx.play('click'); ask = false; paint(back); }; b('#mmGo').onclick = kind === 'end' ? endGrow : kind === 'finish' ? finishChapter : replay; }
+      else { const me = b('#mmEnd'); if (me) me.onclick = () => { Sfx.play('click'); ask = 'end'; paint(); }; const mf = b('#mmFinish'); if (mf) mf.onclick = () => { Sfx.play('click'); ask = 'finish'; paint(); }; b('#mmTitle').onclick = toTitle; b('#mmReplay').onclick = () => { Sfx.play('click'); ask = true; paint(); }; b('#mmClose').onclick = () => { Sfx.play('click'); close(true, true); }; b('#mmCredits').onclick = () => { Sfx.play('click'); Credits.open(); }; const mv = b('#mmVol'); if (mv) mv.appendChild(volumeRow()); }
+      const f = b(focusSel || (ask ? (ASKS[ask] ? '#mmNo' : '#mmGo') : '#mmTitle')); /* v73 (keyboard review m1): a held Enter must not confirm End or Finish */ if (f && f.focus) f.focus();
     }
     function open() { if (isOpen()) return; if (!el) build(); ask = false; prevSpeed = speed; setSpeed(0); Sfx.play('uiOpen'); el.classList.add('show'); paint(); }
     function close(resume, quiet) { if (!isOpen()) return; el.classList.remove('show'); if (!quiet) Sfx.play('uiClose'); if (resume && prevSpeed > 0 && S) setSpeed(prevSpeed); }
+    function endGrow() { close(false, true); flushSay(); try { if (S && !S.cropDone) { S.cropDone = true; S.mature = true; save(); showHarvest(); } } catch (e) { warnOnce('menu#end', e); } }
+    function finishChapter() { close(false, true); flushSay(); try { if (Campaign.canFinish(S)) campHooks().finish(Campaign.onHarvest(S)); } catch (e) { warnOnce('menu#finish', e); } }
     function replay() { close(false, true); flushSay(); save(); if (!(Beginner.replay && Beginner.replay()) && prevSpeed > 0 && S) setSpeed(prevSpeed); }
     addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen()) close(true); });
     return { wanted, open, close, isOpen };

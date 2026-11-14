@@ -819,7 +819,7 @@ var CHAPTERS = [
   goal: { text: 'Pick at least 0.1 kg of lettuce and never let health drop below 50.',
     check: function (S) { return hv(S) >= gnum(1, 'kg', methodOfS(S).key) && st(S).minHealth >= gnum(1, 'floor', methodOfS(S).key); } }, /* v48 */
   fail: { text: 'Your lettuce got too crook. Have another go, and top up the tank earlier.',
-    cause: function (S) { var k = gnum(1, 'kg', methodOfS(S).key); return hv(S) > 0 && hv(S) < k && st(S).minHealth >= gnum(1, 'floor', methodOfS(S).key) ? 'You picked before the head reached ' + k + ' kg. Wait a few more days before you pick, and I will tell you when it is big enough.' : S && !(((S.pr || {}).iron || 0) >= 2 && S.ph > (typeof Sim !== 'undefined' && Sim.stageInfo ? ((Sim.stageInfo(S).targets || {}).ph || [0, 99])[1] : 99)) && (Math.max((S.pr || {}).bolt || 0, st(S).boltMax || 0) >= 2 || Math.max((S.pr || {}).tip || 0, st(S).tipMax || 0) >= 2) ? (Math.max((S.pr || {}).bolt || 0, st(S).boltMax || 0) >= 2 ? 'The lettuce bolted and burned its leaf tips because it stayed in too long.' : 'The lettuce burned its leaf tips because it stayed in too long.') + ' Pick it as soon as I say it is big enough.' : null; }, /* v71 (sweep of round 18): an iron lockout with the pH still high is the cause to name (the general card says pH), and a tipburn-only head is not called bolted */ /* v69 (story round 17 minor 1): a bolted, tip-burnt head was told to water earlier */ /* v66 (play-test #18 m2): a healthy early pick was told the lettuce got too crook */
+    cause: function (S) { var k = gnum(1, 'kg', methodOfS(S).key); return hv(S) > 0 && hv(S) < k && st(S).minHealth >= gnum(1, 'floor', methodOfS(S).key) ? 'You picked before the head reached ' + k + ' kg. Wait a few more days before you pick, and I will tell you when it is big enough.' : S && (st(S).tankH || 0) >= 24 ? 'The tank ran nearly dry. Top it up when the Tank tile goes orange, and check it every few days.' : S && S.pot && (st(S).dryH || 0) >= 18 ? 'The roots dried out. Water when the ' + (S.method && S.method.how === 'coco' ? 'Coco' : 'Soil') + ' tile goes orange, and early in the day when it is hot.' /* v73 (play review on v72 m2): dry pots were blamed on leaf tips */ : S && !(Math.max((S.pr || {}).iron || 0, st(S).ironMax || 0) >= 2 && S.ph > (typeof Sim !== 'undefined' && Sim.stageInfo ? ((Sim.stageInfo(S).targets || {}).ph || [0, 99])[1] : 99)) && (Math.max((S.pr || {}).bolt || 0, st(S).boltMax || 0) >= 2 || Math.max((S.pr || {}).tip || 0, st(S).tipMax || 0) >= 2) ? (Math.max((S.pr || {}).bolt || 0, st(S).boltMax || 0) >= 2 ? 'The lettuce bolted and burned its leaf tips because it stayed in too long.' : 'The lettuce burned its leaf tips because it stayed in too long.') + ' Pick it as soon as I say it is big enough.' : null; }, /* v71 (sweep of round 18): an iron lockout with the pH still high is the cause to name (the general card says pH), and a tipburn-only head is not called bolted */ /* v69 (story round 17 minor 1): a bolted, tip-burnt head was told to water earlier */ /* v66 (play-test #18 m2): a healthy early pick was told the lettuce got too crook */
     check: function (S) { return st(S).minHealth < gnum(1, 'floor', methodOfS(S).key); } }, /* v48 */
   outro: ['Beautiful head of lettuce. That is your first harvest in the books.', 'Next up, I want to show you how to cut waste with refills.'] },
 
@@ -1074,13 +1074,15 @@ function matches(b, S, ev, s) {
 }
 
 /* Call once per game hour after Sim.tick. extraEvents = optional array of engine event ids from that tick. */
+/* v72 (Command Centre after round 18): the Finish the chapter offer is a bubble the player can dismiss; once the goal is met the Menu offers it too */
+function canFinish(S) { if (!cur || !S) return false; var c = byId(cur.id), s = S.__campaign || cur.st; return !!(c && !c.endOnGoal && !c.storyOnly && s && !s.done && c.goal.check(S)); }
 function onTick(S, hooks, extraEvents) {
   if (!cur || !S) return;
   var c = byId(cur.id), s = S.__campaign || (S.__campaign = cur.st), ev = {};
   hooks = hooks || {}; hooks.say = hooks.say || function () {};
   (extraEvents || []).forEach(function (id) { ev[id] = true; });
   if (S.health < s.minHealth) s.minHealth = S.health;
-  { var P1 = S.pr || {}; s.boltMax = Math.max(s.boltMax || 0, P1.bolt || 0); s.tipMax = Math.max(s.tipMax || 0, P1.tip || 0); if (S.pot && S.cap && S.resL / S.cap < 0.15) s.dryH = (s.dryH || 0) + 1; } /* v71 (story round 18 minors 1, 2): a pot pick clears S.pr before the card reads it, so the worst bolt and tip are kept here, and the hours the pot sat dry */
+  { var P1 = S.pr || {}; s.boltMax = Math.max(s.boltMax || 0, P1.bolt || 0); s.tipMax = Math.max(s.tipMax || 0, P1.tip || 0); if (S.pot && S.cap && S.resL / S.cap < 0.15) s.dryH = (s.dryH || 0) + 1; if (!S.pot && S.cap && S.resL / S.cap < 0.15) s.tankH = (s.tankH || 0) + 1; s.ironMax = Math.max(s.ironMax || 0, P1.iron || 0); } /* v72 (story round 19 minors 1, 3): the worst iron lockout and the hours a tank sat nearly empty, kept past the pick */ /* v71 (story round 18 minors 1, 2): a pot pick clears S.pr before the card reads it, so the worst bolt and tip are kept here, and the hours the pot sat dry */
   if (S.pr && S.pr.iron) s.iron = true;
   if (S.pr && S.pr.iron && !S.pot && S.setup && S.setup.meters && !S.setup.meters.ph && hooks && hooks.say && S.day - (s.phWarnDay == null ? -99 : s.phWarnDay) >= 2) { s.phWarnDay = S.day; hooks.say(['The new leaves are yellow between the veins, so the pH has crept up again. Tap pH down once.']); } /* v67 (story review M2): with no pH pen the warning came twice, then the tank drifted on; it now repeats every two days while the lockout lasts */ /* v66 (play-test #18 M2): remembered, so the fail card can name iron lockout after the lockout has cleared */
   var info = null, r = null;
@@ -1119,7 +1121,7 @@ function onTick(S, hooks, extraEvents) {
 /* v67 (story review M1): the cause a fail card names when the chapter's own text does not fit (the fail checks are health floors, so any killer trips them) */
 function genericCause(S) {
   var P = (S && S.pr) || {}, s = st(S), hasPh = !!(S.setup && S.setup.meters && S.setup.meters.ph);
-  if (S.pot && (s.dryH || 0) >= 24 && !((P.iron || s.iron) && S.health < 40)) return 'The roots dried out. Water when the ' + (S.method && S.method.how === 'coco' ? 'Coco' : 'Soil') + ' tile goes orange, and early in the day when it is hot.'; /* v71 (story round 18 minor 2): a bed that died dry was told the heat won */
+  if (S.pot && (s.dryH || 0) >= 18 && /* v72 (story round 19 nit 2): 23 dry hours was told the heat won */ !((P.iron || s.iron) && S.health < 40)) return 'The roots dried out. Water when the ' + (S.method && S.method.how === 'coco' ? 'Coco' : 'Soil') + ' tile goes orange, and early in the day when it is hot.'; /* v71 (story round 18 minor 2): a bed that died dry was told the heat won */
   if ((P.iron || s.iron) && S.health < 40) return 'The pH crept up and locked out iron, so the new leaves went yellow. ' + (hasPh ? 'Keep the pH tile green as well and try again.' : 'Without a pen, ask me about the pH every few days, or borrow a pH pen next time.');
   return null;
 }
@@ -1249,7 +1251,7 @@ w.Campaign = {
   matesLog: function () { return readProg().log; },
   onMatesUnlock: function (fn) { Campaign_onUnlock = fn; },
   sideQuests: sideQuests, startSide: startSide,
-  start: start, attach: attach, onTick: onTick, onHarvest: onHarvest, renderMenu: renderMenu,
+  start: start, attach: attach, onTick: onTick, onHarvest: onHarvest, canFinish: canFinish, renderMenu: renderMenu,
   /* v66 (play-test #18 m2): the active chapter's pick goal in kg (0 when it has none), so the Ripe line waits until a pick can pass it */
   goalKg: function (S) { try { return cur && S ? gnum(cur.id, 'kg', methodOfS(S).key, S.cropId) || gnum(cur.id, 'kg', methodOfS(S).key) || 0 : 0; } catch (e) { return 0; } },
   /* v48 [M34] the grow method the story follows */

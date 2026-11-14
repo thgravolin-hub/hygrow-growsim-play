@@ -1,6 +1,6 @@
 {
- "built_utc": "2026-11-10T14:00:04.904Z",
- "git_commit": "2866e85d5ae4dd47a1fbb0506de9e34639e9e22e",
+ "built_utc": "2026-11-14T12:53:49.473Z",
+ "git_commit": "25e5c177c61422f8c546c1af517da06997ffae50",
  "git_dirty": false,
  "files": [
   {
@@ -1100,8 +1100,8 @@
   },
   {
    "path": "beginner.js",
-   "bytes": 90238,
-   "sha256": "c9045e2aeb0c7147c77c35d7c1ca9b21dc134956593a9b4c6c4f1ff2ab09f621"
+   "bytes": 91354,
+   "sha256": "c30cac10fff5f9e18939bbdd886cb63f88af90fb578f7d8c3032cd17dfa708a5"
   },
   {
    "path": "campaign-scenes.js",
@@ -1110,8 +1110,8 @@
   },
   {
    "path": "campaign.js",
-   "bytes": 99029,
-   "sha256": "67a1bc5478b5e836a4e0b223668a75e9b0480f364c7bb4d80ca82fa6cc1bff98"
+   "bytes": 100136,
+   "sha256": "4d370d038adcfa7922451122c5bb0001b7d001ce62d9bffa538897ab2f99521c"
   },
   {
    "path": "cards.js",
@@ -1125,13 +1125,13 @@
   },
   {
    "path": "challenge.js",
-   "bytes": 28135,
-   "sha256": "f8bf47c760551e37f3da885240ae6226b9c780417ff8d77d292310ba921454a8"
+   "bytes": 28150,
+   "sha256": "7388e8b9bb84761259ec0ac5468cedfffa84f12c837fba1ca4c2487f35b751a3"
   },
   {
    "path": "csv.js",
-   "bytes": 37947,
-   "sha256": "eb2f0c2a01d22f5a6ca607430b58bf8387397119af01d3564b9761cc1a9cba31"
+   "bytes": 38439,
+   "sha256": "5f7f6d444d4cdea4e5ec71ae06eea29ef46c052d607e970ffe99696ce44c2925"
   },
   {
    "path": "daily.js",
@@ -1140,8 +1140,8 @@
   },
   {
    "path": "engine.js",
-   "bytes": 197293,
-   "sha256": "e3a53886b19b44d731c6aac2a0131b6379e9103dee79ddcdb47fde9dc464fd1b"
+   "bytes": 198868,
+   "sha256": "7a5fac765e7f8b63ca570993f2c51525f57866de352c3eac06684419ccde1f62"
   },
   {
    "path": "events.js",
@@ -1155,8 +1155,8 @@
   },
   {
    "path": "gifts.js",
-   "bytes": 16082,
-   "sha256": "2f2452e6feb040da956894d0e1abe47c6ef0a95539d45c2d955d1ea7c075ddb0"
+   "bytes": 16098,
+   "sha256": "848df9ed216f8baf24cdcdd6ae8849321c50cb77242d42b782ba785e0dfca190"
   },
   {
    "path": "goals.js",
@@ -1235,18 +1235,18 @@
   },
   {
    "path": "sw.js",
-   "bytes": 10562,
-   "sha256": "cd8df8593d8c2fc42df91b9410ecb09aa32133a7970510358a8167710e5653fe"
+   "bytes": 10648,
+   "sha256": "a51c063a10154bd9448009cb24cf4c5dc4794ae48d1bd85c9b9894d574e159b7"
   },
   {
    "path": "ui.js",
-   "bytes": 300520,
-   "sha256": "71c110e78502a977b2e805fd1e566c6089ce41776d5dac9289a405926604211d"
+   "bytes": 305621,
+   "sha256": "fc860d026b98aa60315fe3554c194f7bc35b4c8025f8c0c72a4330612474df5e"
   },
   {
    "path": "version.js",
-   "bytes": 146,
-   "sha256": "edaa7d39211141b220296d4b51f61a09a358cfcc553534dfc933852b0b96e9b1"
+   "bytes": 163,
+   "sha256": "e4affa509017052765ac615a56b1b841938528b89d9fb6981d744b07daf4fa1c"
   },
   {
    "path": "voice.js",
@@ -4009,5 +4009,5 @@
    "sha256": "c7c1b76f937d0c26fd4ca01e54a1c2381be85ec743df8ef9d09565b4a95d0d00"
   }
  ],
- "total_bytes": 28180739
+ "total_bytes": 28190247
 }

@@ -682,7 +682,7 @@ function propagator(S, s, evs) {
   S.airT = T1; S.ea += dE; S.domeT = dT; S.domeEa = dE; S.domeAir = T1;
 }
 function autoDim(S) {
-  const su = S.setup, st = stageOf(S), P0 = su.light.watts * su.light.umolPerJ / su.tent.area_m2, hrs = photoperiod(S) || st.photoperiod || 12;
+  const su = S.setup, st = stageOf(S), P0 = su.light.watts * su.light.umolPerJ / su.tent.area_m2, hrs = st.photoperiod || photoperiod(S) || 12; /* v72 (story round 19 minor 2): the stage's own day length, so shortening the light hours lowers the day's light and heat instead of the dim rising to make up for it */
   const byP = st.ppfd && st.ppfd[1] ? 0.95 * st.ppfd[1] / P0 : 1, byD = st.dli && st.dli[1] ? 0.95 * st.dli[1] / (P0 * hrs * 0.0036) : 1;
   return clamp(Math.round(Math.min(1, byP, byD) * 100) / 100, 0.3, 1);
 }
@@ -838,10 +838,10 @@ const NEWP = {
   captip: { crop: 'capsicum', title: 'Tipburn on young leaves', why: 'Calcium is not reaching the new leaf tips, so they brown off and go crisp.', fix: 'Fix: keep the air moving, hold EC and pH in range and add Cal-Mag.', acts: ['fan', 'changeRes'], hint: 'Cal-Mag supplement' },
   smallfruit: { crop: 'capsicum', title: 'Small fruit: nights too cool', why: 'Cold nights are keeping the capsicums small and slowing new fruit.', fix: 'Fix: run the lights longer or slow the fan so the tent holds its heat overnight.', acts: ['lights', 'fan'], hint: 'Heater / heat mat' },
   aphid: { crop: 'chilli', title: 'Aphids on the tips', why: 'Tiny green aphids are clustering on the soft growing tips of over-fed or stressed plants.', fix: 'Fix: spray neem oil (again in 5 days), ease the feed back into range and keep the air moving.', acts: ['spray', 'fan'], hint: 'Pest spray (ask in store)' },
-  thinfruit: { crop: 'chilli', title: 'Thin, pale chillies', why: 'There is not enough light, so the chillies are coming in thin and pale.', fix: 'Fix: lift the dimmer or add lighting hours until the daily light is back in range.', acts: ['lights'], hint: '' },
+  thinfruit: { crop: 'chilli', title: 'Thin, pale chillies', why: 'There is not enough light, so the chillies are coming in thin and pale.', fix: 'Fix: add light hours (tap Lights) until the daily light is back in range.', acts: ['lights'], hint: '' },
   greymould: { crop: 'strawberry', title: 'Grey mould on the berries', why: 'Damp air around the fruit is growing grey fuzz on the ripe berries.', fix: 'Fix: dry the air, lift the fan speed, prune lower leaves and pick ripe berries quickly.', acts: ['fan', 'prune'], hint: 'Dehumidifier' },
   runners: { crop: 'strawberry', title: 'Runners taking over', why: 'Long days and a strong feed make the plant throw runners instead of berries.', fix: 'Fix: cut the lights to 12 to 14 hours and ease the feed back into range.', acts: ['lights', 'topUp'], hint: 'EC meter' },
-  smallberry: { crop: 'strawberry', title: 'Small berries: low light', why: 'There is not enough light, so the berries stay small and pale.', fix: 'Fix: lift the dimmer or add lighting hours until the daily light is back in range.', acts: ['lights'], hint: '' },
+  smallberry: { crop: 'strawberry', title: 'Small berries: low light', why: 'There is not enough light, so the berries stay small and pale.', fix: 'Fix: add light hours (tap Lights) until the daily light is back in range.', acts: ['lights'], hint: '' },
   slugbite: { crop: 'lettuce', title: 'Slugs chewing the leaves', why: 'Very damp air has slugs and snails chewing ragged holes in the outer leaves.', fix: 'Fix: prune dead leaves off the base and dry the air for two days. Slug bait helps.', acts: ['prune', 'fan', 'spray'], hint: 'Dehumidifier' },
   rootrot: { crop: 'lettuce', title: 'Warm tank: outer leaves limp', why: 'The tank is too warm for lettuce, so the roots struggle and outer leaves go yellow and limp.', fix: 'Fix: change the tank, add an air pump and shade it or run the fan harder to cool the water.', acts: ['changeRes', 'fan'], hint: 'Water chiller' },
   fusarium: { crop: 'basil', title: 'Pythium root rot: warm tank', why: 'A warm, airless tank lets Pythium in. Roots go brown and slimy and the plant wilts.', fix: 'Fix: cool the tank, change to fresh water, add an air stone and cut off the wilted stems.', acts: ['changeRes', 'fan'], hint: 'Water chiller' },
@@ -895,7 +895,7 @@ function problems(S, evs, out, lit, ppfd) {
   const C = CROP_DATA[S.cropId], s = stageOf(S), a = S.a, su = S.setup, st = S.stage, T = S.airT;
   const ecT = ecTotal(S), noMeter = k => !su.meters[k];
   const dec = (k, up, dn) => { a[k] = Math.max(0, a[k] + (up ? up : -dn)); };
-  dec('iron', S.ph > C.fe ? 1 : 0, 2);
+  dec('iron', S.ph >= C.fe + ((S.autoDim || S.out || S.pot || S.slots) ? 0.05 : 0.0001) ? 1 : 0, 2); /* v72 (play-test #22 m1): the pH tile prints one decimal, so 6.22 reads 6.2 and green; iron lockout starts where the tile reads over the limit */
   dec('ecH', ecT > s.ec[1] + 0.8 ? 1 : 0, 2);
   dec('low', st >= 1 && (S.pot ? S.nutL / potDen(S) : S.nutL / Math.max(S.resL, 0.05)) + 0.15 < s.ec[0] - 0.7 ? 1 : 0, 1);
   if (S.pot) a.wet = Math.max(0, (a.wet || 0) + (S.resL / S.cap > 0.9 ? 1 : -0.5)); // soaked for more than a day => waterlogged roots (soil: root rot pressure, coco: oxygen stress) [M3]
@@ -1030,7 +1030,7 @@ function problems(S, evs, out, lit, ppfd) {
     ['dryair', th(a.dryAir, 6, 18, 36), 'Air too dry', 'The air is very dry (high VPD, how thirsty the air is). Plants close their pores and stop growing; leaf edges crisp.', su.humMode === 'humidify' ? ['fan'] : ['humidity', 'fan'], su.humMode === 'humidify' ? 'Fan speed controller' : 'Humidifier'],
     ['ber', th(a.ber, 8, 20, 40), 'Blossom end rot', 'Fruit bottoms are going sunken and black. Calcium is not reaching the fruit (high EC, humidity swings, pH or drought).', ['changeRes', 'phDown'], 'Cal-Mag supplement'],
     ['wilt', S.wilt > 0.8 ? 3 : S.wilt > 0.5 ? 2 : S.wilt > 0.2 ? 1 : 0, S.pot ? 'Wilting: pots dry' : 'Wilting: tank empty', S.pot ? 'The pots have run dry and the plants are wilting. Tap Water.' : 'The reservoir has run dry and the plants are wilting. Tap Top up.', S.pot ? ['water'] : ['topUp'], S.pot ? '' : 'Auto top-up kit'], /* v51: pots have no tank (critic round 5) */
-    ['lowwater', S.resL < 0.2 * S.cap && S.wilt <= 0.2 ? 1 : 0, S.pot ? 'Pots drying out' : 'Tank running low', S.pot ? 'The pots are nearly dry. Water before the plants wilt.' : 'Less than 20% of the tank is left. Top up before plants go dry.', S.pot ? ['water'] : ['topUp'], S.pot ? '' : 'Larger reservoir'], /* v49b: pots have no tank */
+    ['lowwater', S.resL < 0.2 * S.cap && S.wilt <= 0.2 ? 1 : 0, S.pot ? 'Pots drying out' : 'Tank running low', S.pot ? 'The pots are nearly dry. Tap Water before the plants wilt.' : 'Less than 20% of the tank is left. Tap Top up before the plants go dry.', S.pot ? ['water'] : ['topUp'], S.pot ? '' : 'Larger reservoir'], /* v49b: pots have no tank */
     ['tip', th(a.tip, 8, 20, 40), 'Tipburn', 'Leaf edges in the centre of the head are going brown and crisp. Calcium is not reaching the fast-growing heart (strong feed, thirsty air, too much light, stale air or pH off).', ['fan', 'changeRes', 'lights'], 'Cal-Mag supplement'],
     ['bolt', th(a.bolt, 30, 90, 160), 'Bolting', 'Warm days (above ' + C.boltT + 'C) and long light hours are pushing the lettuce to bolt: a tall flower stalk and bitter leaves.', ['fan', 'lights'], 'Chiller'],
     ['dm', th(a.dm, 10, 30, 60), 'Downy mildew', 'Humidity has sat above 85% so spores are spreading. Yellow patches show on top of leaves with grey fuzz underneath.', dampFix, su.humMode === 'dehumidify' ? 'Fan' : 'Dehumidifier'],
@@ -1064,7 +1064,7 @@ function growBlock(S, evs) {
   const lo = s.dli[0] * 0.9, hi = s.dli[1] * 1.3;
   const fD = dli < lo ? dli / lo : dli <= hi ? 1 : Math.max(0.7, 1 - 0.15 * (dli - hi) / hi);
   const g = S.acc.w > 0 ? S.acc.sum / S.acc.w : 0, pm = probMult(S);
-  S.dliLast = dli; S.dayG = g * fD * pm;
+  S.dliLast = dli; if (S.autoDim) S.dliStage = S.stage; /* v72 (story round 19 nit 1): with the dim following the stage, yesterday's light belongs to the old stage */ S.dayG = g * fD * pm;
   if (!S.cropDone) S.bio += s.gmax * fD * g * pm;
   S.leaf = 0.9 * (1 - Math.exp(-S.bio / (C.leafK || 120)));
   let gain = 0;
@@ -1222,7 +1222,7 @@ function whyRed(S, key) {
     }
     case 'ppfd': {
       if (out) return done('Light ' + n0(v) + ': harsh sun on a hot day. Put the shade cloth on.', S.shade ? null : pick('shade'));
-      return done('Light ' + n0(v) + ': ' + (low ? 'too dim for ' + crop + '. Lift the dimmer or add hours.' : 'too bright for ' + crop + '. Dim the lights.'), pick('lights'));
+      return done('Light ' + n0(v) + ': ' + (low ? 'too dim for ' + crop + '. Add light hours.' : 'too bright for ' + crop + '. Shorten the light hours.'), pick('lights'));
     }
     case 'dli': {
       if (out) return done('Daily light (DLI) ' + r2(v, 0) + ' mol on a hot day: more sun than ' + crop + ' wants. Shade it a bit.', S.shade ? null : pick('shade')); // [M-x] v44
@@ -1286,7 +1286,7 @@ function methodDefs(S, defs) {
   if (pot) {
     const m = S.resL / S.cap, soil = how === 'soil', medium = soil ? 'soil' : 'coco';
     byId.wilt[2] = 'Wilting: root zone dry'; byId.wilt[3] = 'The ' + medium + ' has dried out and the plants are wilting. Tap Water.'; /* v71: names the button, as every other fix line does */ byId.wilt[4] = soil ? ['water'] : ['water', 'feed']; byId.wilt[5] = 'Drip kit and timer';
-    byId.lowwater[1] = m < 0.4 && S.wilt <= 0.2 ? 1 : 0; byId.lowwater[2] = 'Getting dry'; byId.lowwater[3] = 'The ' + medium + ' is under 40% moisture. Water before the plants wilt.'; byId.lowwater[4] = ['water']; byId.lowwater[5] = 'Drip kit and timer';
+    byId.lowwater[1] = m < 0.4 && S.wilt <= 0.2 ? 1 : 0; byId.lowwater[2] = 'Getting dry'; byId.lowwater[3] = 'The ' + medium + ' is under 40% moisture. Tap Water before the plants wilt.'; /* v72 (play-test #22 m2): names the button */ byId.lowwater[4] = ['water']; byId.lowwater[5] = 'Drip kit and timer';
     byId.rot[3] = 'Warm, wet roots with little air are breeding root rot. Let it drain and water less.'; byId.rot[4] = []; byId.rot[5] = 'Pots and saucers';
     byId.ecburn[3] = soil ? 'The soil is carrying too much feed. Tips are scorching and roots struggle.' : 'The coco has built up salt. Tips are scorching and roots struggle to drink.'; byId.ecburn[4] = ['water']; byId.ecburn[5] = 'Fresh water';
     byId.lowec[3] = 'The ' + medium + ' is short of feed for this stage. Growth is stalling and leaves pale.'; byId.lowec[4] = ['feed']; byId.lowec[5] = 'Nutrient line';
@@ -1349,7 +1349,7 @@ function outsideDiag(S, res) {
   const cool = !S.cropDone && S.lastF && S.lastF.t < 0.92 && S.airT < (tb[0] + tb[1]) / 2;
   const heatNow = !S.cropDone && ((S.lit && S.airT > tb[1]) || hot >= 1);
   const loDay = Math.min(tb[0], coldLim(S, C, C.coldT || 15, 3)), coldNow = !S.lit || Math.round(S.airT) < loDay; /* v67 (critic round 16 M3): by day the Air tile's own low edge (graced, 13 C for a tomato), not the stage band (24 C), so a green tile never hears Cold night */ /* v66 (critic round 15 M1): "Cold night" by day, with the Air tile green, read as wrong; by day it is a reminder for dusk, with nothing to tap now */
-  if (!S.lit && S.airT > tb[1]) { /* v71 (sweep of round 18): a night over the band top (26 C at 23:00) is not a cold night; the heat answer covers it */ }
+  if (!S.lit && S.airT > tb[1]) { res.push({ id: 'warmNight', title: 'Warm night', why: 'The night is warmer than this crop likes, so it rests less.', fix: S.cover ? 'cover' : '', act: S.cover ? 'cover' : null, say: S.cover ? (ver ? 'Warm night. The pots are in; put them out so they cool off.' : 'Warm night. Take the cover off so the bed cools.') : 'Warm night. Nothing to tap; it cools off by morning. Keep the soil watered.', productHint: null, severity: S.airT > tb[1] + 3 ? 2 : 1 }); } /* v71 (sweep of round 18): a night over the band top is not a cold night. v72 (sweep of round 19): it gets its own answer, so a red Air tile is not passed over for an orange one */
   else if ((chill || cool) && !coldNow) res.push({ id: 'chill', title: 'Cold last night', why: 'The nights are cold for this crop. The day is fine.', fix: '', act: null, say: ver ? 'It was cold last night. Bring the pots in again at dusk.' : 'It was cold last night. Cover the bed again at dusk.', productHint: null, severity: 0 }); /* v69 (play-test #20 m5): a reminder for dusk, so an orange tile now is answered first */
   else if (chill || cool) {
     const sev = Math.max(S.pr.cold || 0, (S.a.chill || 0) >= 200 ? 3 : (S.a.chill || 0) >= 80 ? 2 : 1);
@@ -1518,7 +1518,7 @@ function act(S, id, p) {
       if (ml >= PH_TAP_ML - 1) d = Math.max(d, PH_TAP_MIN + PH_TAP_PAD);
       d = Math.min(d, Math.max(PH_TAP_MIN + PH_TAP_PAD, bandW / 2 - PH_TAP_PAD) * Math.max(1, ml / PH_TAP_ML));
       S.ph = clamp(S.ph + (id === 'phUp' ? d : -d), 3.5, 9); spend(ml * 0.03); /* v52: Ph down 1L is $27.27 ex GST in products.js, about 3 cents a mL with GST; the Spent stat follows the catalogue, not a made-up rate */
-      info(id === 'phUp' ? 'pH up added' : 'pH down added', 'pH should ' + (id === 'phUp' ? 'rise' : 'fall') + ' to about ' + r2(S.ph, 1) + '. Wait a little before adding more.'); // [M-x] v44
+      info(id === 'phUp' ? 'pH up added' : 'pH down added', 'pH should ' + (id === 'phUp' ? 'rise' : 'fall') + ' to about ' + r2(S.ph, 1) + '.' + ((id === 'phDown' ? S.ph > stageOf(S).ph[1] + 0.05 : S.ph < stageOf(S).ph[0] - 0.05) ? ' That is still ' + (id === 'phDown' ? 'above' : 'below') + ' the ' + r2(stageOf(S).ph[0], 1) + ' to ' + r2(stageOf(S).ph[1], 1) + ' band, so tap ' + (id === 'phDown' ? 'pH down' : 'pH up') + ' again.' : ' Wait a little before adding more.')); /* v72 (play-test #22 m4): a dose that leaves the pH out of band says tap again (a literal player stopped at 6.5 against a 6.2 top) */ // [M-x] v44
       break; }
     case 'topUp': {
       const room = S.cap - S.resL, l = clamp(+p.litres || 0, 0, room);
@@ -1805,7 +1805,7 @@ function diagnose(S) {
     humOn ? (fanDry ? (cool ? 'Fix: the humidifier is on; lower the fan.' : 'Fix: the humidifier is on; lower the fan or shorten the light hours.') /* v64 (critic round 13 #1) */ : (cool ? 'Fix: the humidifier is on and the tent is cool, so leave the lights and give it time.' : 'Fix: the humidifier is on; shorten the light hours a little.')) : fanDry ? (cool ? 'Fix: lower the fan or turn the Mist on.' : 'Fix: lower the fan, turn the Mist on, or shorten the light hours.') : cool ? 'Fix: turn the Mist on.' : 'Fix: turn the Mist on or shorten the light hours.', dampHint, dryHint);
   chk('temp', 'Air temperature', S.airT, tb[0], tb[1], 3, 'C', 'Air temperature', 'Cold slows growth and fruit set.', 'Heat stalls growth and drops flowers.',
     /* v61 (play-test #15 #1): the old lights-longer answer was said with the lights already on their longest day (and more hours do not warm a lit tent); now the answer is the lever that is left, or the plain truth */
-    su.fanM3h > 150 ? 'Fix: lower the fan speed to keep the lamp heat in.' : photoperiod(S) < s.photoperiod ? 'Fix: the fan is already low, so tap Lights until it reads ' + s.photoperiod + 'h or more for more warm hours.' /* v64 (critic round 12 nit #5): the cycle can pass a longer day on the way, and that one is warmer still */ : 'Fix: the fan is already low and the lights are on their full day. The tent runs cool for this crop, so it grows a bit slower.', su.fanM3h >= 450 ? 'Fix: the fan is already on High, so shorten the light hours or run them at night only.' : 'Fix: raise the fan speed, shorten the light hours or run them at night only.', 'Heater / heat mat', 'Fan speed controller');
+    su.fanM3h > 150 ? 'Fix: lower the fan speed to keep the lamp heat in.' : photoperiod(S) < s.photoperiod ? 'Fix: the fan is already low, so tap Lights until it reads ' + s.photoperiod + 'h or more for more warm hours.' /* v64 (critic round 12 nit #5): the cycle can pass a longer day on the way, and that one is warmer still */ : 'Fix: the fan is already low and the lights are on their full day. The tent runs cool for this crop, so it grows a bit slower.', su.fanM3h >= 450 ? 'Fix: the fan is already on High, so shorten the light hours: fewer hot hours a day.' : 'Fix: raise the fan speed, or shorten the light hours so the tent has fewer hot hours.', 'Heater / heat mat', 'Fan speed controller');
   chk('ec', 'Nutrient strength', ecT, s.ec[0], s.ec[1], 0.5, 'mS', S.pot ? 'Feed EC' : 'Tank EC', 'The plants are underfed.', S.pot ? 'The feed is too strong and can burn roots.' : 'The solution is too strong and can burn roots.',
     S.pot ? 'Fix: feed stronger at the next watering.' : 'Fix: mix more nutrients into the tank.', S.pot ? 'Fix: water with plain water to flush the pots.' : 'Fix: top up with plain water, or change the tank if it is well above target.', /* v52 (critic round 6 #3): pots have no tank */ 'EC meter', 'EC meter');
   chk('ph', 'pH', S.ph, s.ph[0], s.ph[1], 0.3, 'pH', S.pot ? 'Water pH' : 'Tank pH', 'Acid solution locks out calcium and magnesium.', 'High pH locks out iron, so new leaves yellow.',
@@ -1814,7 +1814,7 @@ function diagnose(S) {
     'Fix: move the tank somewhere warmer.', S.airT < s.tempDay[0] ? 'Fix: shade the tank or add an air pump. Keep the fan low, the air is already cool.' : 'Fix: shade the tank, run the fan harder or add an air pump.', 'Heater / heat mat', 'Air pump');
   if (S.resL < 0.4 * S.cap) add('water', 'Tank level', 'Only ' + r2(S.resL, 1) + ' L of ' + r2(S.cap, 0) + ' L is left, so the nutrient mix gets strong and plants may go dry.', 'Fix: top up with plain water.', 'Larger reservoir', S.resL < 0.2 * S.cap ? 3 : 1);
   if (S.do2 < 6) add('oxygen', 'Dissolved oxygen', 'Oxygen is ' + r2(S.do2, 1) + ' mg/L, under 6. Low oxygen in warm water leads to root rot.', 'Fix: add an air pump or cool the tank.', 'Air pump', S.do2 < 4.5 ? 2 : 1);
-  if (S.dliLast > 0 && (S.dliLast < s.dli[0] * 0.9 || S.dliLast > s.dli[1] * 1.3) && !(S.stage < 1 && !(su.meters || {}).par)) { /* v66 (critic round 15 m2): no Daily light answer for a seedling the player has no light meter for; it argued with the lesson's Lights step */ const lowL = S.dliLast < s.dli[0]; add('light', 'Daily light', 'Yesterday plants got ' + r2(S.dliLast, 1) + ' mol/m2 of light against ' + rg(s.dli) + '. ' + (lowL ? 'Too little light means slow, leggy growth.' : 'Too much light adds heat and stress.'), lowL ? (photoperiod(S) < 18 ? 'Fix: tap Lights for a longer day.' : 'Fix: the lights are on their longest day, so this lamp is a little weak for this crop.') : photoperiod(S) > 12 ? 'Fix: tap Lights for a shorter day.' : 'Fix: the lights are on their shortest day, so this lamp is just strong for this crop. It does little harm.', '', 1); } /* v65 (critic round 14 minor 2): the Lights button sets the hours (18, 14, 12); there is no dimmer, so the fix names the hours */
+  if (S.dliLast > 0 && !(S.dliStage != null && S.dliStage !== S.stage) && (S.dliLast < s.dli[0] * 0.9 || S.dliLast > s.dli[1] * 1.3) && !(S.stage < 1 && !(su.meters || {}).par)) { /* v66 (critic round 15 m2): no Daily light answer for a seedling the player has no light meter for; it argued with the lesson's Lights step */ const lowL = S.dliLast < s.dli[0]; add('light', 'Daily light', 'Yesterday plants got ' + r2(S.dliLast, 1) + ' mol/m2 of light against ' + rg(s.dli) + '. ' + (lowL ? 'Too little light means slow, leggy growth.' : 'Too much light adds heat and stress.'), lowL ? (photoperiod(S) < 18 ? 'Fix: tap Lights for a longer day.' : 'Fix: the lights are on their longest day, so this lamp is a little weak for this crop.') : photoperiod(S) > 12 ? 'Fix: tap Lights for a shorter day.' : 'Fix: the lights are on their shortest day, so this lamp is just strong for this crop. It does little harm.', '', 1); } /* v65 (critic round 14 minor 2): the Lights button sets the hours (18, 14, 12); there is no dimmer, so the fix names the hours */
   // named problems already flagged by the simulation (skip ones covered above)
   const done = {}; out.forEach(o => { done[o.id] = 1; });
   const P = S.pr;

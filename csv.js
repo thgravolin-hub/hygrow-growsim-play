@@ -130,16 +130,16 @@ function colStats(rows, j, dec) {
 var SKIP = /dew|heat.?index|batt|rssi|signal|volt|press|hpa|baro|lux|illuminance|serial|device|alarm|\bsn\b|\bmac\b|model/;
 var W = '(^|[^a-z])', E = '([^a-z]|$)';
 var RULES = [
-  ['timestamp', new RegExp(W + '(time ?stamp|timestamp|date ?[\\/&] ?time|datetime|date|time|observed|recorded|logged)' + E), 0.95],
+  ['timestamp', new RegExp(W + '(time ?stamp|timestamp|date ?[\\/&] ?time|datetime|date|time|observed|recorded|logged|zeit|zeitstempel|datum|uhrzeit|tijd|horodatage|heure|fecha|hora)' + E), 0.95],
   ['vpd_kpa', /vpd|vapou?r.?pressure.?def/, 0.95],
   ['co2_ppm', /co2|co₂|carbon/, 0.95],
   ['ppfd_umol_m2_s', new RegExp(W + '(ppfd|par|ppf)' + E + '|umol|µmol|light intensity|photosynthetic'), 0.9],
   ['dissolved_o2_mgl', new RegExp('dissolved|oxygen|' + W + 'do2?' + E), 0.85],
   ['ph', new RegExp(W + 'ph' + E), 0.95],
-  ['rh_pct', new RegExp('humid|relative|' + W + '(rh|hum)' + E), 0.95],
-  ['water_temp_c', /(water|solution|soln|reservoir|nutrient|tank|root|liquid|\bres\b).*temp|temp.*(water|solution|reservoir|nutrient|tank|root|liquid|\bres\b)|^w[_ ]?temp/, 0.95],
+  ['rh_pct', new RegExp('humid|relative|feucht|vocht|humedad|umidit|' + W + '(rh|hum|rf|hr)' + E), 0.95], /* v72 (critic round 18 n4): Feuchte, Luftfeuchte, luchtvochtigheid, humedad; a German Feuchte column was left unmapped, so its Temperatur was read as water temp. Timestamps, water temp and EC get German, Dutch, French and Spanish words too; LF is left out (it is Luftfeuchte and Leitfaehigkeit) */
+  ['water_temp_c', /(water|solution|soln|reservoir|nutrient|tank|root|liquid|\bres\b|wasser|l(ö|oe)sung|n(ä|ae)hrl|eau|agua).*temp|temp.*(water|solution|reservoir|nutrient|tank|root|liquid|\bres\b|wasser|l(ö|oe)sung|n(ä|ae)hrl|eau|agua)|^w[_ ]?temp/, 0.95],
   ['reservoir_l', /(reservoir|tank|\bres\b)[^a-z]*(l\b|lit|vol|level|size|capacity)|volume|water ?level/, 0.8],
-  ['ec_mscm', new RegExp(W + '(ec|cf|tds|ppm)' + E + '|conductiv|salinity|nutrient ?(strength|conc)'), 0.9],
+  ['ec_mscm', new RegExp(W + '(ec|cf|tds|ppm)' + E + '|conductiv|leitf|geleid|salinity|nutrient ?(strength|conc)'), 0.9],
   ['light_on', /(light|lamp|photoperiod|led).*(on|state|status|schedule)|^(light|lights|lamp)$/, 0.7],
   ['air_temp_c', new RegExp('temp|' + W + 't' + E), 0.9]
 ];
