@@ -1,6 +1,6 @@
 {
- "built_utc": "2026-11-14T12:53:49.473Z",
- "git_commit": "25e5c177c61422f8c546c1af517da06997ffae50",
+ "built_utc": "2026-11-15T09:43:13.230Z",
+ "git_commit": "421e90714b109fda5476f04053a1a6b539d1a359",
  "git_dirty": false,
  "files": [
   {
@@ -1100,8 +1100,8 @@
   },
   {
    "path": "beginner.js",
-   "bytes": 91354,
-   "sha256": "c30cac10fff5f9e18939bbdd886cb63f88af90fb578f7d8c3032cd17dfa708a5"
+   "bytes": 91613,
+   "sha256": "877f668f51cbe81a358bc4a7b62cdd56dade714b1636c2bec88551d82a4e3113"
   },
   {
    "path": "campaign-scenes.js",
@@ -1235,18 +1235,18 @@
   },
   {
    "path": "sw.js",
-   "bytes": 10648,
-   "sha256": "a51c063a10154bd9448009cb24cf4c5dc4794ae48d1bd85c9b9894d574e159b7"
+   "bytes": 10669,
+   "sha256": "79a52d82ff72fed2e9b19057beb3b2e70d140efa3d31bc2cf230cbf7aadbf333"
   },
   {
    "path": "ui.js",
-   "bytes": 305621,
-   "sha256": "fc860d026b98aa60315fe3554c194f7bc35b4c8025f8c0c72a4330612474df5e"
+   "bytes": 305916,
+   "sha256": "99d9e063461919547a75f6a9d0804539c2d2ea7cfd9761143714c60e341d44aa"
   },
   {
    "path": "version.js",
    "bytes": 163,
-   "sha256": "e4affa509017052765ac615a56b1b841938528b89d9fb6981d744b07daf4fa1c"
+   "sha256": "dbfc31478a948181265168975f43688c7a29cc1c82be1e45ed3e86906b76a979"
   },
   {
    "path": "voice.js",
@@ -4009,5 +4009,5 @@
    "sha256": "c7c1b76f937d0c26fd4ca01e54a1c2381be85ec743df8ef9d09565b4a95d0d00"
   }
  ],
- "total_bytes": 28190247
+ "total_bytes": 28190822
 }

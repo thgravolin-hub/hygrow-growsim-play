@@ -848,6 +848,7 @@
     d.innerHTML = '<div class="card bgd"><h2>' + (+sc.kg >= kgFloor ? 'You did it!' : 'Lesson over') + '</h2><p>' + (!(+sc.kg > 0) ? 'The ' + cropWord() + ' finished with nothing ripe to pick. Next time keep every tile green, and act as soon as one goes orange.' : +sc.kg < kgFloor ? 'You picked only a little ' + cropWord() + '. Next time let it fill out before you pick.' /* v74 (play review on v73 m3): 0.01 kg of basil ended on You did it */ : replaying ? 'You grew and picked your ' + cropWord() + ' with Axel again.' : 'You grew and picked your first ' + cropWord() + ' with Axel.') + (mates ? ' <b>+' + mates + ' Mates</b> for the Campaign.' : '') + '</p>' +
       '<div class="bgd-stats"><div><b>' + sc.kg + ' kg</b><span>Picked</span></div><div><b>' + sc.eco + '</b><span>Eco score</span></div></div>' + (sc.keep ? '<p class="bgd-keep">' + sc.keep + '</p>' : '') + '<div class="foot"><button class="big" id="bgdKeep" type="button">Finish lesson, keep growing</button><button class="ghost" id="bgdMenu" type="button">Back to the title</button><button class="ghost" id="bgdKit" type="button">Take this home</button><button class="ghost" id="bgdCamp" type="button">Start the Campaign</button></div>' +
       '<div class="bgd-trail">' + trail() + '</div></div>'; /* v66 (round 15 keyboard m5): the buttons come before the path pills, so Finish lesson is the first stop after the heading */
+    { var h2 = d.querySelector('h2'); if (h2 && h2.textContent) d.setAttribute('aria-label', h2.textContent); } /* v76 (final walk nit): the name says how the lesson ended */
     document.body.appendChild(d);
     d.querySelector('#bgdKit').onclick = function () { try { if (window.TakeHome) window.TakeHome.show(); } catch (e) {} };
     var chip = function () { try { if (window.__game && __game.afterHarvest) __game.afterHarvest(); } catch (e) {} }; /* v56 (play-test #12 #11): first harvest done, so the install chip may show once the card is gone */
@@ -930,6 +931,7 @@
     return true; /* Beginner speaks for itself; engine tips and problem bubbles stay out of the way */
   }
   window.Beginner = {
+    slotReady: slotReady, /* v76: the dock Pick glow uses the same per-slot rule */
     start: start, replay: function () { return start({ fresh: true }); }, startOver: startOver,
     saveProgress: saveProgress, hasProgress: function () { return !!progGet(); }, progressStep: function () { var p = progGet(); return p ? progIndex(p) + 1 : 0; }, progKey: PROG, /* the in-game Menu calls ui.js save() first, then this: same entry point as the title card, from step 1 */
     attach: attach, skip: skip, finishKeep: finishKeep, progressTotal: function () { var p = progGet(); return p ? scriptLen(p.method) : 0; }, scriptFor: scriptFor, scriptLen: scriptLen,

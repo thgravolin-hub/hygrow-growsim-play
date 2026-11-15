@@ -1824,7 +1824,8 @@
     const pk = rd.plant ? rd.plant.harvestedKg || 0 : 0; if (!pickedLock) setNum($('#picked'), pk.toFixed(2) + ' kg');
     const lb = document.querySelector('[data-act="lights"]'); if (lb) { const tg = info.targets && info.targets.photoperiod; lb.classList.toggle('ready', mode === 'learn' && S.lightHours != null && tg != null && S.lightHours !== tg); }
     dockLabels(); weeklyTip(day);
-    const harvestReady = !rd.cropDone && ((rd.plant && rd.plant.ripeKg > 0.2) || rd.mature);
+    const slotsNow = S.slots && Sim.slotInfo && window.Beginner && Beginner.slotReady ? Sim.slotInfo(S) : null; /* v76 (final walk minor): a tower sums its slots, so eight 0.026 kg strawberries glowed Pick before any slot was ready */
+    const harvestReady = !rd.cropDone && (slotsNow ? slotsNow.some(x => Beginner.slotReady(S, x)) : ((rd.plant && rd.plant.ripeKg > 0.2) || rd.mature));
     document.querySelector('[data-act="harvest"]').classList.toggle('ready', harvestReady);
     if (rd.cropDone && !endShown) { endShown = true; setSpeed(0); setTimeout(rd.lost ? showLost : showHarvest, 600); } /* [M29] */
   }
